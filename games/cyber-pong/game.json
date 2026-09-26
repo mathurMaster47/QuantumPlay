@@ -1,0 +1,9 @@
+{
+  "id": "cyber-pong",
+  "title": "Cyber Pong 2099",
+  "description": "Retro arcade paddle duel against AI. Slide your phone joystick up and down to deflect high-speed laser balls.",
+  "icon": "fa-solid fa-table-tennis-paddle-ball",
+  "thumbnail": "games/cyber-pong/thumbnail.svg",
+  "themeColor": "emerald",
+  "script": "games/cyber-pong/game.js"
+}

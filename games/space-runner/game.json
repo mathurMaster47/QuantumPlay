@@ -1,0 +1,9 @@
+{
+  "id": "space-runner",
+  "title": "Space Neo-Runner",
+  "description": "Dodge falling space debris and incoming asteroids using left/right tilt or D-pad on your phone controller. Press A for speed boost!",
+  "icon": "fa-solid fa-rocket",
+  "thumbnail": "games/space-runner/thumbnail.svg",
+  "themeColor": "indigo",
+  "script": "games/space-runner/game.js"
+}

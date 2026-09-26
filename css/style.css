@@ -1,0 +1,78 @@
+/* QuantumPlay Custom Styles */
+body {
+    background-color: #0b0d12;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+}
+
+.glass-card {
+    background: rgba(18, 24, 38, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.game-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px -10px rgba(99, 102, 241, 0.4);
+}
+
+/* Virtual Joystick / D-Pad Styling */
+.btn-gamepad {
+    background: radial-gradient(circle, rgba(55,65,81,1) 0%, rgba(31,41,55,1) 100%);
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 4px 10px rgba(0,0,0,0.5);
+    transition: transform 0.05s ease, filter 0.05s ease;
+}
+
+.btn-gamepad:active {
+    transform: scale(0.92);
+    filter: brightness(1.3);
+}
+
+.btn-action {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.25rem;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+    transition: transform 0.05s ease, filter 0.05s ease;
+}
+
+.btn-action:active {
+    transform: scale(0.9);
+    filter: brightness(1.3);
+}
+
+/* Prevent scrolling on phone when using controller */
+.no-scroll {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+/* Custom Scrollbar for desktop */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0b0d12;
+}
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+}

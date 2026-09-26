@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GameHub Cloud & Wireless Controller</title>
+    <title>QuantumPlay - Cloud & Wireless Controller Arcade</title>
     <!-- Tailwind CSS CDN for Sleek UI -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PeerJS for WebRTC Realtime Peer Connection -->
@@ -12,66 +12,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        /* Dark Theme Netflix / Streaming Style Customizations */
-        body {
-            background-color: #0b0d12;
-            color: #e2e8f0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
-        }
-
-        .glass-card {
-            background: rgba(18, 24, 38, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .game-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .game-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 12px 30px -10px rgba(99, 102, 241, 0.4);
-        }
-
-        /* Virtual Joystick / D-Pad Styling */
-        .btn-gamepad {
-            background: radial-gradient(circle, rgba(55,65,81,1) 0%, rgba(31,41,55,1) 100%);
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.1), 0 4px 10px rgba(0,0,0,0.5);
-            active: scale(0.92);
-        }
-
-        .btn-action {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.25rem;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.4);
-            transition: transform 0.05s ease, filter 0.05s ease;
-        }
-
-        .btn-action:active {
-            transform: scale(0.9);
-            filter: brightness(1.3);
-        }
-
-        /* Prevent scrolling on phone when using controller */
-        .no-scroll {
-            overflow: hidden;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -85,7 +27,7 @@
                 <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-indigo-500/30">
                     <i class="fa-solid fa-gamepad"></i>
                 </div>
-                <span class="text-xl font-bold tracking-wider text-white">NEXUS<span class="text-indigo-500">ARCADE</span></span>
+                <span class="text-xl font-bold tracking-wider text-white">QUANTUM<span class="text-indigo-500">PLAY</span></span>
             </div>
             
             <div class="flex items-center space-x-4">
@@ -106,14 +48,14 @@
                         Your Phone is Your Gamepad.
                     </h1>
                     <p class="text-gray-400 mt-3 text-lg">
-                        Select any game below, scan the pair code with your smartphone camera, and start playing immediately with low-latency WebRTC controls.
+                        Select any game below, scan the pair QR code with your smartphone, and start playing immediately with low-latency WebRTC controls.
                     </p>
                 </div>
                 <div class="z-10 mt-6 md:mt-0 flex items-center space-x-3 text-gray-400 text-sm bg-gray-900/80 px-5 py-3 rounded-2xl border border-gray-800">
                     <i class="fa-solid fa-mobile-screen-button text-2xl text-indigo-400"></i>
                     <div>
-                        <div class="text-white font-semibold">No Plugins or Keyboard Needed</div>
-                        <div class="text-xs text-gray-500">Pure WebRTC touch communication</div>
+                        <div class="text-white font-semibold">Modular Game Engine</div>
+                        <div class="text-xs text-gray-500">Drop new games into <code>games/</code> folder</div>
                     </div>
                 </div>
             </div>
@@ -125,42 +67,8 @@
                 <i class="fa-solid fa-fire text-indigo-500 mr-3"></i> Available Games
             </h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Game 1 Card -->
-                <div class="game-card glass-card rounded-2xl overflow-hidden flex flex-col border border-gray-800">
-                    <div class="h-48 bg-gradient-to-tr from-indigo-900 via-slate-900 to-purple-900 relative flex items-center justify-center p-6">
-                        <i class="fa-solid fa-rocket text-7xl text-indigo-400/80 drop-shadow-lg"></i>
-                        <span class="absolute top-4 right-4 bg-gray-900/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-emerald-400 border border-emerald-500/30">Ready to Play</span>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white">Space Neo-Runner</h3>
-                            <p class="text-gray-400 text-sm mt-2">Dodge falling space debris and incoming asteroids using left/right tilt or d-pad on your phone controller.</p>
-                        </div>
-                        <button onclick="launchGame('space-runner')" class="mt-6 w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all">
-                            <i class="fa-solid fa-play"></i>
-                            <span>Launch Game</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Game 2 Card -->
-                <div class="game-card glass-card rounded-2xl overflow-hidden flex flex-col border border-gray-800">
-                    <div class="h-48 bg-gradient-to-tr from-emerald-900 via-slate-900 to-teal-900 relative flex items-center justify-center p-6">
-                        <i class="fa-solid fa-table-tennis-paddle-ball text-7xl text-emerald-400/80 drop-shadow-lg"></i>
-                        <span class="absolute top-4 right-4 bg-gray-900/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-emerald-400 border border-emerald-500/30">Ready to Play</span>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white">Cyber Pong 2099</h3>
-                            <p class="text-gray-400 text-sm mt-2">Retro arcade paddle duel against AI. Slide your phone joystick up and down to deflect the high-speed laser ball.</p>
-                        </div>
-                        <button onclick="launchGame('cyber-pong')" class="mt-6 w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-2 transition-all">
-                            <i class="fa-solid fa-play"></i>
-                            <span>Launch Game</span>
-                        </button>
-                    </div>
-                </div>
+            <!-- Dynamically Populated by js/game-loader.js -->
+            <div id="game-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             </div>
         </main>
     </div>
@@ -172,8 +80,8 @@
         <!-- Game Header Top Bar -->
         <div class="glass-card px-6 py-3 flex items-center justify-between border-b border-gray-800">
             <div class="flex items-center space-x-4">
-                <button onclick="closeGame()" class="text-gray-400 hover:text-white px-3 py-1 rounded-lg bg-gray-800/80 border border-gray-700 text-sm transition">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> Exit Game
+                <button onclick="QuantumApp.closeGame()" class="text-gray-400 hover:text-white px-3 py-1 rounded-lg bg-gray-800/80 border border-gray-700 text-sm transition flex items-center">
+                    <i class="fa-solid fa-arrow-left mr-2"></i> Exit Game
                 </button>
                 <h3 id="current-game-title" class="font-bold text-white text-lg">Game Name</h3>
             </div>
@@ -195,7 +103,7 @@
                         <i class="fa-solid fa-qrcode"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-white">Scan Controller QR Code</h3>
-                    <p class="text-gray-400 text-sm mt-1 mb-6">Open your phone's camera to transform it into a gamepad. Keyboard controls are disabled.</p>
+                    <p class="text-gray-400 text-sm mt-1 mb-6">Open your phone's camera to transform it into a gamepad controller.</p>
 
                     <div class="p-4 bg-white rounded-2xl shadow-inner mb-6">
                         <div id="qrcode"></div>
@@ -271,416 +179,10 @@
         </div>
     </div>
 
-
-    <!-- ========================================== -->
-    <!-- JAVASCRIPT LOGIC (WebRTC + Canvas Games)   -->
-    <!-- ========================================== -->
-    <script>
-        // --- GLOBAL STATE ---
-        let peer = null;
-        let hostConn = null;
-        let roomId = null;
-        let activeGame = null;
-        let animationFrameId = null;
-
-        // Controller State
-        const controllerInput = {
-            up: false,
-            down: false,
-            left: false,
-            right: false,
-            btnA: false,
-            btnB: false
-        };
-
-        // --- DOM ELEMENTS ---
-        const dashboardView = document.getElementById('dashboard-view');
-        const gameView = document.getElementById('game-view');
-        const controllerView = document.getElementById('controller-view');
-        const hostPeerStatus = document.getElementById('host-peer-status');
-        const gameControllerStatus = document.getElementById('game-controller-status');
-        const qrModal = document.getElementById('qr-modal');
-        const displayRoomId = document.getElementById('display-room-id');
-        const currentGameTitle = document.getElementById('current-game-title');
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        // --- INITIALIZATION ROUTER ---
-        window.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetRoom = urlParams.get('room');
-
-            if (targetRoom) {
-                // RUNNING AS PHONE CONTROLLER
-                initControllerMode(targetRoom);
-            } else {
-                // RUNNING AS DASHBOARD / HOST
-                initHostMode();
-            }
-        });
-
-        // =========================================================================
-        // HOST MODE (Laptop / Desktop View)
-        // =========================================================================
-        function initHostMode() {
-            dashboardView.classList.remove('hidden');
-            
-            // Generate Unique Peer ID for this session
-            roomId = 'nexus-' + Math.random().toString(36).substring(2, 9);
-            peer = new Peer(roomId);
-
-            peer.on('open', (id) => {
-                hostPeerStatus.textContent = 'Server Ready';
-                hostPeerStatus.previousElementSibling.className = 'fa-solid fa-signal text-emerald-400 text-xs mr-2';
-            });
-
-            peer.on('connection', (conn) => {
-                hostConn = conn;
-                setupHostConnectionListeners();
-            });
-
-            peer.on('error', (err) => {
-                console.error('PeerJS Host Error:', err);
-                hostPeerStatus.textContent = 'Connection Error';
-                hostPeerStatus.previousElementSibling.className = 'fa-solid fa-triangle-exclamation text-rose-500 text-xs mr-2';
-            });
-        }
-
-        function setupHostConnectionListeners() {
-            hostConn.on('open', () => {
-                // Phone Connected! Hide QR Code modal
-                qrModal.classList.add('hidden');
-                gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected</span>';
-                gameControllerStatus.className = 'flex items-center space-x-2 text-sm bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20';
-            });
-
-            hostConn.on('data', (data) => {
-                // Receive touch gamepad events from phone
-                if (data && data.type === 'INPUT') {
-                    Object.assign(controllerInput, data.payload);
-                }
-            });
-
-            hostConn.on('close', () => {
-                qrModal.classList.remove('hidden');
-                gameControllerStatus.innerHTML = '<i class="fa-solid fa-qrcode text-yellow-400"></i><span class="text-yellow-400">Awaiting Mobile Connection...</span>';
-                gameControllerStatus.className = 'flex items-center space-x-2 text-sm bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20';
-            });
-        }
-
-        function launchGame(gameKey) {
-            activeGame = gameKey;
-            dashboardView.classList.add('hidden');
-            gameView.classList.remove('hidden');
-
-            // Generate QR Code targeting this current page URL + room param
-            const controllerUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-            
-            document.getElementById('qrcode').innerHTML = '';
-            new QRCode(document.getElementById('qrcode'), {
-                text: controllerUrl,
-                width: 180,
-                height: 180,
-                colorDark : "#0f172a",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-
-            displayRoomId.textContent = roomId;
-
-            // Resize Canvas & Start Loop
-            canvas.width = 800;
-            canvas.height = 500;
-
-            if (gameKey === 'space-runner') {
-                currentGameTitle.textContent = 'Space Neo-Runner';
-                initSpaceRunner();
-            } else if (gameKey === 'cyber-pong') {
-                currentGameTitle.textContent = 'Cyber Pong 2099';
-                initCyberPong();
-            }
-        }
-
-        function closeGame() {
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            gameView.classList.add('hidden');
-            dashboardView.classList.remove('hidden');
-            activeGame = null;
-        }
-
-
-        // =========================================================================
-        // CONTROLLER MODE (Mobile Phone View)
-        // =========================================================================
-        function initControllerMode(targetRoom) {
-            dashboardView.classList.add('hidden');
-            gameView.classList.add('hidden');
-            controllerView.classList.remove('hidden');
-            controllerView.classList.add('flex');
-            document.body.classList.add('no-scroll');
-
-            const statusDot = document.getElementById('ctrl-status-dot');
-            const statusText = document.getElementById('ctrl-status-text');
-            const ctrlGamepadInterface = document.getElementById('ctrl-gamepad-interface');
-
-            peer = new Peer();
-
-            peer.on('open', () => {
-                hostConn = peer.connect(targetRoom);
-
-                hostConn.on('open', () => {
-                    statusDot.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
-                    statusText.textContent = 'CONNECTED';
-                    statusText.className = 'text-xs font-semibold text-emerald-400 uppercase tracking-wider';
-                    ctrlGamepadInterface.classList.remove('opacity-40', 'pointer-events-none');
-                });
-
-                hostConn.on('close', () => {
-                    statusDot.className = 'w-3 h-3 rounded-full bg-red-500';
-                    statusText.textContent = 'DISCONNECTED';
-                    statusText.className = 'text-xs font-semibold text-rose-500 uppercase tracking-wider';
-                    ctrlGamepadInterface.classList.add('opacity-40', 'pointer-events-none');
-                });
-            });
-
-            peer.on('error', (err) => {
-                console.error("PeerJS Controller Error:", err);
-                statusText.textContent = 'ERROR CONNECTING';
-            });
-
-            setupTouchListeners();
-        }
-
-        function setupTouchListeners() {
-            const buttons = [
-                { id: 'btn-up', key: 'up' },
-                { id: 'btn-down', key: 'down' },
-                { id: 'btn-left', key: 'left' },
-                { id: 'btn-right', key: 'right' },
-                { id: 'btn-a', key: 'btnA' },
-                { id: 'btn-b', key: 'btnB' }
-            ];
-
-            buttons.forEach(btnInfo => {
-                const el = document.getElementById(btnInfo.id);
-                
-                const handleStart = (e) => {
-                    e.preventDefault();
-                    controllerInput[btnInfo.key] = true;
-                    if (navigator.vibrate) navigator.vibrate(20);
-                    sendInputState();
-                };
-
-                const handleEnd = (e) => {
-                    e.preventDefault();
-                    controllerInput[btnInfo.key] = false;
-                    sendInputState();
-                };
-
-                el.addEventListener('touchstart', handleStart, { passive: false });
-                el.addEventListener('touchend', handleEnd, { passive: false });
-                el.addEventListener('mousedown', handleStart);
-                el.addEventListener('mouseup', handleEnd);
-            });
-        }
-
-        function sendInputState() {
-            if (hostConn && hostConn.open) {
-                hostConn.send({
-                    type: 'INPUT',
-                    payload: controllerInput
-                });
-            }
-        }
-
-
-        // =========================================================================
-        // GAME 1: SPACE NEO-RUNNER
-        // =========================================================================
-        function initSpaceRunner() {
-            let player = { x: 380, y: 400, w: 40, h: 40, speed: 6, color: '#6366f1' };
-            let obstacles = [];
-            let score = 0;
-            let frame = 0;
-
-            function loop() {
-                frame++;
-                ctx.fillStyle = '#090d16';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // --- CONTROLLER INPUT HANDLING (PHONE ONLY) ---
-                if (controllerInput.left && player.x > 0) player.x -= player.speed;
-                if (controllerInput.right && player.x < canvas.width - player.w) player.x += player.speed;
-                if (controllerInput.up && player.y > 0) player.y -= player.speed;
-                if (controllerInput.down && player.y < canvas.height - player.h) player.y += player.speed;
-
-                // Speed boost when pressing Action A
-                player.speed = controllerInput.btnA ? 10 : 6;
-
-                // --- SPAWN OBSTACLES ---
-                if (frame % 30 === 0) {
-                    obstacles.push({
-                        x: Math.random() * (canvas.width - 30),
-                        y: -30,
-                        w: 30 + Math.random() * 20,
-                        h: 30,
-                        speed: 3 + Math.random() * 4
-                    });
-                }
-
-                // --- DRAW PLAYER ---
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = player.color;
-                ctx.fillStyle = player.color;
-                ctx.beginPath();
-                ctx.moveTo(player.x + player.w / 2, player.y);
-                ctx.lineTo(player.x + player.w, player.y + player.h);
-                ctx.lineTo(player.x, player.y + player.h);
-                ctx.closePath();
-                ctx.fill();
-                ctx.shadowBlur = 0;
-
-                // --- UPDATE & DRAW OBSTACLES ---
-                for (let i = obstacles.length - 1; i >= 0; i--) {
-                    let obs = obstacles[i];
-                    obs.y += obs.speed;
-
-                    ctx.fillStyle = '#f43f5e';
-                    ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
-
-                    // AABB Collision Detection
-                    if (
-                        player.x < obs.x + obs.w &&
-                        player.x + player.w > obs.x &&
-                        player.y < obs.y + obs.h &&
-                        player.y + player.h > obs.y
-                    ) {
-                        score = 0; // Reset Score on Collision
-                    }
-
-                    // Remove off-screen obstacles
-                    if (obs.y > canvas.height) {
-                        obstacles.splice(i, 1);
-                        score += 10;
-                    }
-                }
-
-                // --- DRAW SCORE ---
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 20px Segoe UI';
-                ctx.fillText(`Score: ${score}`, 20, 35);
-
-                animationFrameId = requestAnimationFrame(loop);
-            }
-
-            loop();
-        }
-
-
-        // =========================================================================
-        // GAME 2: CYBER PONG 2099
-        // =========================================================================
-        function initCyberPong() {
-            let paddleWidth = 12, paddleHeight = 90;
-            let playerY = canvas.height / 2 - paddleHeight / 2;
-            let aiY = canvas.height / 2 - paddleHeight / 2;
-            let ball = { x: canvas.width / 2, y: canvas.height / 2, vx: 5, vy: 3, radius: 8 };
-            let playerScore = 0, aiScore = 0;
-
-            function loop() {
-                ctx.fillStyle = '#060911';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                // --- CONTROLLER INPUT HANDLING (PHONE ONLY) ---
-                if (controllerInput.up && playerY > 0) playerY -= 7;
-                if (controllerInput.down && playerY < canvas.height - paddleHeight) playerY += 7;
-
-                // --- SIMPLE AI PADDLE ---
-                let aiCenter = aiY + paddleHeight / 2;
-                if (aiCenter < ball.y - 15 && aiY < canvas.height - paddleHeight) aiY += 4.5;
-                else if (aiCenter > ball.y + 15 && aiY > 0) aiY -= 4.5;
-
-                // --- BALL PHYSICS ---
-                ball.x += ball.vx;
-                ball.y += ball.vy;
-
-                // Top / Bottom Bouncing
-                if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= canvas.height) {
-                    ball.vy *= -1;
-                }
-
-                // Player Paddle Collision
-                if (
-                    ball.x - ball.radius <= 30 + paddleWidth &&
-                    ball.y >= playerY &&
-                    ball.y <= playerY + paddleHeight
-                ) {
-                    ball.vx = Math.abs(ball.vx) + 0.3; // Speed up
-                    ball.x = 30 + paddleWidth + ball.radius;
-                }
-
-                // AI Paddle Collision
-                if (
-                    ball.x + ball.radius >= canvas.width - 30 - paddleWidth &&
-                    ball.y >= aiY &&
-                    ball.y <= aiY + paddleHeight
-                ) {
-                    ball.vx = -Math.abs(ball.vx) - 0.3;
-                    ball.x = canvas.width - 30 - paddleWidth - ball.radius;
-                }
-
-                // Scoring
-                if (ball.x < 0) {
-                    aiScore++;
-                    resetBall();
-                } else if (ball.x > canvas.width) {
-                    playerScore++;
-                    resetBall();
-                }
-
-                function resetBall() {
-                    ball.x = canvas.width / 2;
-                    ball.y = canvas.height / 2;
-                    ball.vx = (Math.random() > 0.5 ? 1 : -1) * 5;
-                    ball.vy = (Math.random() > 0.5 ? 1 : -1) * 3;
-                }
-
-                // --- RENDER GAME ---
-                // Dashed Net
-                ctx.setLineDash([6, 6]);
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-                ctx.beginPath();
-                ctx.moveTo(canvas.width / 2, 0);
-                ctx.lineTo(canvas.width / 2, canvas.height);
-                ctx.stroke();
-                ctx.setLineDash([]);
-
-                // Player Paddle
-                ctx.fillStyle = '#10b981';
-                ctx.fillRect(30, playerY, paddleWidth, paddleHeight);
-
-                // AI Paddle
-                ctx.fillStyle = '#f43f5e';
-                ctx.fillRect(canvas.width - 30 - paddleWidth, aiY, paddleWidth, paddleHeight);
-
-                // Ball
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Scores
-                ctx.font = 'bold 32px Segoe UI';
-                ctx.fillStyle = '#10b981';
-                ctx.fillText(playerScore, canvas.width / 2 - 60, 50);
-                ctx.fillStyle = '#f43f5e';
-                ctx.fillText(aiScore, canvas.width / 2 + 40, 50);
-
-                animationFrameId = requestAnimationFrame(loop);
-            }
-
-            loop();
-        }
-    </script>
+    <!-- Application Script Modules -->
+    <script src="js/webrtc.js"></script>
+    <script src="js/controller.js"></script>
+    <script src="js/game-loader.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>

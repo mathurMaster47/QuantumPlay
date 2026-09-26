@@ -1,0 +1,9 @@
+{
+  "id": "laser-defender",
+  "title": "Laser Defender",
+  "description": "Defend your starbase against waves of hostile alien invaders. Move with D-Pad and press A to fire plasma lasers!",
+  "icon": "fa-solid fa-shield-halved",
+  "thumbnail": "games/laser-defender/thumbnail.svg",
+  "themeColor": "purple",
+  "script": "games/laser-defender/game.js"
+}
