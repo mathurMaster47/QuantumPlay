@@ -85,7 +85,7 @@ window.QuantumApp = (function () {
                     hostPeerStatus.previousElementSibling.className = 'fa-solid fa-triangle-exclamation text-rose-500 text-xs mr-2';
                 }
             }
-        });
+        }, false); // Don't force reconnection on initial load
     }
 
     /**
@@ -137,6 +137,7 @@ window.QuantumApp = (function () {
 
     function updateQRCode(roomId) {
         if (!roomId) return;
+        
         let controllerUrl;
         let origin = window.location.origin;
 
@@ -148,20 +149,30 @@ window.QuantumApp = (function () {
             controllerUrl = `${origin}${path}?room=${roomId}`;
         }
 
-        const qrContainer = document.getElementById('qrcode');
-        if (qrContainer) {
-            qrContainer.innerHTML = '';
-            new QRCode(qrContainer, {
-                text: controllerUrl,
-                width: 180,
-                height: 180,
-                colorDark: "#0f172a",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.H
-            });
-        }
-
         if (displayRoomId) displayRoomId.textContent = roomId;
+
+        // Only generate QR code if container exists and QRCode library is loaded
+        const qrContainer = document.getElementById('qrcode');
+        if (qrContainer && typeof QRCode !== 'undefined') {
+            try {
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, {
+                    text: controllerUrl,
+                    width: 180,
+                    height: 180,
+                    colorDark: "#0f172a",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+            } catch (err) {
+                console.error('Failed to generate QR code:', err);
+                // Fallback: show the URL text if QR generation fails
+                qrContainer.innerHTML = `<div class="text-xs text-gray-400 break-all p-2">${controllerUrl}</div>`;
+            }
+        } else if (qrContainer) {
+            // QRCode library not loaded yet, show loading message
+            qrContainer.innerHTML = '<div class="text-gray-400 text-sm">Loading QR library...</div>';
+        }
     }
 
     /**
@@ -174,7 +185,37 @@ window.QuantumApp = (function () {
                 hostPeerStatus.previousElementSibling.className = 'fa-solid fa-spinner fa-spin text-indigo-400 text-xs mr-2';
             }
         }
-        initHostMode();
+        // Force reconnection when user explicitly requests it
+        window.QuantumWebRTC.initHostMode({
+            onServerReady: (id) => {
+                if (hostPeerStatus) {
+                    hostPeerStatus.textContent = 'Server Ready';
+                    hostPeerStatus.previousElementSibling.className = 'fa-solid fa-signal text-emerald-400 text-xs mr-2';
+                }
+                if (displayRoomId) displayRoomId.textContent = id;
+                if (activeGameId) updateQRCode(id);
+            },
+            onClientConnected: () => {
+                if (qrModal) qrModal.classList.add('hidden');
+                if (gameControllerStatus) {
+                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected</span>';
+                    gameControllerStatus.className = 'flex items-center space-x-2 text-sm bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20';
+                }
+            },
+            onClientDisconnected: () => {
+                if (qrModal) qrModal.classList.remove('hidden');
+                if (gameControllerStatus) {
+                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-qrcode text-yellow-400"></i><span class="text-yellow-400">Awaiting Mobile Connection...</span>';
+                    gameControllerStatus.className = 'flex items-center space-x-2 text-sm bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20';
+                }
+            },
+            onError: (err) => {
+                if (hostPeerStatus) {
+                    hostPeerStatus.textContent = 'Connection Error';
+                    hostPeerStatus.previousElementSibling.className = 'fa-solid fa-triangle-exclamation text-rose-500 text-xs mr-2';
+                }
+            }
+        }, true); // Force reconnection
     }
 
     /**
@@ -200,7 +241,7 @@ window.QuantumApp = (function () {
     /**
      * Launch selected game
      */
-    async function launchGame(gameId) {
+    async function launchGame(gameId, isControllerConnected = false) {
         activeGameId = gameId;
         hideGameOver();
         dashboardView.classList.add('hidden');
@@ -208,7 +249,10 @@ window.QuantumApp = (function () {
 
         const roomId = window.QuantumWebRTC.getRoomId();
         if (roomId) {
-            updateQRCode(roomId);
+            // Only update QR code if controller is not already connected
+            if (!isControllerConnected) {
+                updateQRCode(roomId);
+            }
         } else if (displayRoomId) {
             displayRoomId.textContent = 'Connecting to server...';
         }
@@ -253,7 +297,17 @@ window.QuantumApp = (function () {
         if (activeGameId) {
             window.QuantumGameLoader.stopGame(activeGameId);
             hideGameOver();
-            launchGame(activeGameId);
+            
+            // Check if controller is already connected to avoid reshown QR modal
+            const isControllerConnected = gameControllerStatus && 
+                gameControllerStatus.innerHTML.includes('Phone Connected');
+            
+            // If controller is connected, hide QR modal temporarily during restart
+            if (isControllerConnected && qrModal) {
+                qrModal.classList.add('hidden');
+            }
+            
+            launchGame(activeGameId, isControllerConnected);
         }
     }
 

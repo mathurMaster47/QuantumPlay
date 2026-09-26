@@ -114,7 +114,16 @@
     /**
      * Initialize Host Mode (Desktop / Laptop)
      */
-    async function initHostMode(callbacks) {
+    async function initHostMode(callbacks, forceReconnect = false) {
+        // Only recreate room if it doesn't exist or if explicitly requested
+        if (!forceReconnect && room && roomId && isHost) {
+            console.log('Reusing existing WebRTC room:', roomId);
+            if (callbacks && callbacks.onServerReady) {
+                callbacks.onServerReady(roomId);
+            }
+            return roomId;
+        }
+
         if (room) {
             try { room.leave(); } catch (e) {}
             room = null;
