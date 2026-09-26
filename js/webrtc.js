@@ -30,15 +30,28 @@
 
     async function getTrystero() {
         if (!trysteroModule) {
+            // Add timeout to prevent infinite loading
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Trystero import timeout')), 10000);
+            });
+
             try {
-                trysteroModule = await import('https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm');
+                trysteroModule = await Promise.race([
+                    import('https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm'),
+                    timeoutPromise
+                ]);
+                console.log('Trystero loaded from primary CDN');
             } catch (err) {
                 console.warn('Primary Trystero CDN failed, trying backup...', err);
                 try {
-                    trysteroModule = await import('https://esm.sh/@trystero-p2p/nostr@0.25.4');
+                    trysteroModule = await Promise.race([
+                        import('https://esm.sh/@trystero-p2p/nostr@0.25.4'),
+                        timeoutPromise
+                    ]);
+                    console.log('Trystero loaded from backup CDN');
                 } catch (err2) {
                     console.error('All Trystero WebRTC imports failed:', err2);
-                    throw err2;
+                    throw new Error('Failed to load Trystero library. Please check your internet connection and try again.');
                 }
             }
         }
@@ -136,6 +149,7 @@
 
         try {
             const { joinRoom } = await getTrystero();
+            console.log('Creating P2P room:', roomId);
             room = joinRoom({ appId: 'quantumplay-arcade' }, roomId);
 
             // Bind actions
@@ -167,6 +181,7 @@
             if (callbacks && callbacks.onServerReady) {
                 callbacks.onServerReady(roomId);
             }
+            console.log('P2P room created successfully');
         } catch (err) {
             console.error('Failed to create serverless WebRTC room:', err);
             if (callbacks && callbacks.onError) callbacks.onError(err);
@@ -197,6 +212,7 @@
 
         try {
             const { joinRoom } = await getTrystero();
+            console.log('Controller joining P2P room:', targetRoom);
             room = joinRoom({ appId: 'quantumplay-arcade' }, targetRoom);
 
             // Bind actions
@@ -219,6 +235,7 @@
                     if (callbacks && callbacks.onDisconnected) callbacks.onDisconnected();
                 }
             );
+            console.log('Controller P2P room joined successfully');
         } catch (err) {
             console.error('Failed to join WebRTC room:', err);
             if (callbacks && callbacks.onError) callbacks.onError(err);

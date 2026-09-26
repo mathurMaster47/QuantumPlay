@@ -56,6 +56,14 @@ window.QuantumApp = (function () {
         // Load Game Library Grid
         window.QuantumGameLoader.loadLibrary('game-grid');
 
+        // Show loading state
+        if (hostPeerStatus) {
+            hostPeerStatus.textContent = 'Initializing P2P...';
+            if (hostPeerStatus.previousElementSibling) {
+                hostPeerStatus.previousElementSibling.className = 'fa-solid fa-spinner fa-spin text-indigo-400 text-xs mr-2';
+            }
+        }
+
         // Initialize PeerJS Host Server
         window.QuantumWebRTC.initHostMode({
             onServerReady: (id) => {
@@ -86,10 +94,12 @@ window.QuantumApp = (function () {
                 }
             },
             onError: (err) => {
+                console.error('P2P initialization error:', err);
                 if (hostPeerStatus) {
-                    hostPeerStatus.textContent = 'Connection Error';
+                    hostPeerStatus.textContent = 'P2P Failed - Retry';
                     hostPeerStatus.previousElementSibling.className = 'fa-solid fa-triangle-exclamation text-rose-500 text-xs mr-2';
                 }
+                alert('Failed to initialize P2P connection. Please check your internet connection and try clicking "Retry Connection".');
             }
         }, false); // Don't force reconnection on initial load
     }
@@ -105,6 +115,10 @@ window.QuantumApp = (function () {
         document.body.classList.add('no-scroll');
 
         window.QuantumController.initControllerUI();
+
+        // Show loading state
+        if (ctrlStatusText) ctrlStatusText.textContent = 'INITIALIZING P2P...';
+        if (ctrlStatusDot) ctrlStatusDot.className = 'w-3 h-3 rounded-full bg-indigo-500 animate-pulse';
 
         window.QuantumWebRTC.initControllerMode(targetRoom, {
             onStatus: (statusMsg) => {
@@ -130,13 +144,15 @@ window.QuantumApp = (function () {
                 if (ctrlGamepadInterface) ctrlGamepadInterface.classList.add('opacity-40', 'pointer-events-none');
             },
             onError: (err) => {
+                console.error('Controller P2P error:', err);
                 if (ctrlStatusDot) ctrlStatusDot.className = 'w-3 h-3 rounded-full bg-rose-500';
                 if (ctrlStatusText) {
-                    ctrlStatusText.textContent = 'ERROR CONNECTING';
+                    ctrlStatusText.textContent = 'P2P FAILED';
                     ctrlStatusText.className = 'text-xs font-semibold text-rose-500 uppercase tracking-wider';
                 }
                 const manualBox = document.getElementById('manual-room-box');
                 if (manualBox) manualBox.classList.remove('hidden');
+                alert('Failed to connect to P2P network. Please check your internet connection and try again.');
             }
         });
     }
@@ -237,10 +253,12 @@ window.QuantumApp = (function () {
                 }
             },
             onError: (err) => {
+                console.error('P2P initialization error:', err);
                 if (hostPeerStatus) {
-                    hostPeerStatus.textContent = 'Connection Error';
+                    hostPeerStatus.textContent = 'P2P Failed - Retry';
                     hostPeerStatus.previousElementSibling.className = 'fa-solid fa-triangle-exclamation text-rose-500 text-xs mr-2';
                 }
+                alert('Failed to initialize P2P connection. Please check your internet connection and try clicking "Retry Connection".');
             }
         }, true); // Force reconnection
     }
