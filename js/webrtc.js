@@ -28,21 +28,20 @@ window.QuantumWebRTC = (function () {
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' }
             ]
-        }
+        },
+        debug: 1
     };
 
     /**
      * Initialize Host Mode (Desktop/Laptop)
      */
     function initHostMode(callbacks) {
-        // Let PeerJS generate a unique registered ID or fallback to clean custom ID
-        roomId = 'qp-' + Math.random().toString(36).substring(2, 8);
-        
         if (peer && !peer.destroyed) {
             peer.destroy();
         }
 
-        peer = new Peer(roomId, peerOptions);
+        // Initialize PeerJS letting the server generate & register a clean unique peer ID
+        peer = new Peer(peerOptions);
 
         peer.on('open', (id) => {
             roomId = id;
@@ -54,19 +53,20 @@ window.QuantumWebRTC = (function () {
             setupHostListeners(callbacks);
         });
 
+        peer.on('disconnected', () => {
+            console.warn('Host disconnected from PeerJS signaling server. Auto-reconnecting...');
+            if (peer && !peer.destroyed) {
+                peer.reconnect();
+            }
+        });
+
         peer.on('error', (err) => {
             console.error('PeerJS Host Error:', err);
-            // Fallback: If custom ID failed, let PeerJS auto-assign an ID
-            if (err.type === 'unavailable-id' || err.type === 'invalid-id') {
-                peer = new Peer(peerOptions);
-                peer.on('open', (autoId) => {
-                    roomId = autoId;
-                    if (callbacks.onServerReady) callbacks.onServerReady(autoId);
-                });
-                peer.on('connection', (conn) => {
-                    hostConn = conn;
-                    setupHostListeners(callbacks);
-                });
+            // Auto-recover on connection loss
+            if (err.type === 'network' || err.type === 'disconnected' || err.type === 'socket-error') {
+                if (peer && !peer.destroyed) {
+                    setTimeout(() => peer.reconnect(), 1000);
+                }
             } else if (callbacks.onError) {
                 callbacks.onError(err);
             }
@@ -148,14 +148,20 @@ window.QuantumWebRTC = (function () {
             });
 
             hostConn.on('error', (err) => {
-                console.warn('Controller hostConn error:', err);
+                console.warn('Controller connection error:', err);
                 if (attempt < 4) {
-                    if (callbacks.onStatus) callbacks.onStatus(`Retrying (${attempt}/3)...`);
+                    if (callbacks.onStatus) callbacks.onStatus(`Retrying connection (${attempt}/3)...`);
                     setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 1500);
                 } else if (callbacks.onError) {
                     callbacks.onError(err);
                 }
             });
+        });
+
+        peer.on('disconnected', () => {
+            if (peer && !peer.destroyed) {
+                peer.reconnect();
+            }
         });
 
         peer.on('error', (err) => {

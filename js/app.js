@@ -55,6 +55,7 @@ window.QuantumApp = (function () {
                     hostPeerStatus.previousElementSibling.className = 'fa-solid fa-signal text-emerald-400 text-xs mr-2';
                 }
                 if (displayRoomId) displayRoomId.textContent = id;
+                if (activeGameId) updateQRCode(id);
             },
             onClientConnected: () => {
                 if (qrModal) qrModal.classList.add('hidden');
@@ -126,16 +127,8 @@ window.QuantumApp = (function () {
         });
     }
 
-    /**
-     * Launch selected game
-     */
-    async function launchGame(gameId) {
-        activeGameId = gameId;
-        dashboardView.classList.add('hidden');
-        gameView.classList.remove('hidden');
-
-        const roomId = window.QuantumWebRTC.getRoomId();
-        
+    function updateQRCode(roomId) {
+        if (!roomId) return;
         let origin = window.location.origin;
         if (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.startsWith('file')) {
             origin = 'https://mathurmaster47.github.io/QuantumPlay';
@@ -145,7 +138,6 @@ window.QuantumApp = (function () {
         if (!path.endsWith('/')) path += '/';
         const controllerUrl = `${origin}${path}?room=${roomId}`;
 
-        // Render QR Code
         const qrContainer = document.getElementById('qrcode');
         if (qrContainer) {
             qrContainer.innerHTML = '';
@@ -160,6 +152,22 @@ window.QuantumApp = (function () {
         }
 
         if (displayRoomId) displayRoomId.textContent = roomId;
+    }
+
+    /**
+     * Launch selected game
+     */
+    async function launchGame(gameId) {
+        activeGameId = gameId;
+        dashboardView.classList.add('hidden');
+        gameView.classList.remove('hidden');
+
+        const roomId = window.QuantumWebRTC.getRoomId();
+        if (roomId) {
+            updateQRCode(roomId);
+        } else if (displayRoomId) {
+            displayRoomId.textContent = 'Connecting to server...';
+        }
 
         const meta = window.QuantumGameLoader.getGameMeta(gameId);
         if (currentGameTitle) currentGameTitle.textContent = meta ? meta.title : gameId;
