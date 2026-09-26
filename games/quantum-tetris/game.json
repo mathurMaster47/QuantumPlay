@@ -1,0 +1,16 @@
+{
+  "id": "quantum-tetris",
+  "title": "Neon Cyber Tetris",
+  "description": "Sleek arcade block-building puzzle! Move blocks with joystick, press ROTATE to flip polyominos, and press HARD DROP to place instantly!",
+  "icon": "fa-solid fa-cubes-stacked",
+  "thumbnail": "games/quantum-tetris/thumbnail.svg",
+  "themeColor": "indigo",
+  "script": "games/quantum-tetris/game.js",
+  "controls": {
+    "joystickAxis": "2d",
+    "buttons": [
+      { "id": "btnA", "label": "ROTATE", "color": "indigo" },
+      { "id": "btnB", "label": "DROP", "color": "emerald" }
+    ]
+  }
+}

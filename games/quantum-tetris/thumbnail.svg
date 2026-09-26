@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tetrisBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="50%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#311042"/>
+    </linearGradient>
+    <filter id="cyanGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="240" fill="url(#tetrisBg)"/>
+
+  <!-- Tetris Blocks Grid Silhouette -->
+  <!-- I Piece (Cyan) -->
+  <g transform="translate(80, 100)">
+    <rect x="0" y="0" width="30" height="30" rx="4" fill="#00f0ff" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+    <rect x="32" y="0" width="30" height="30" rx="4" fill="#00f0ff" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+    <rect x="64" y="0" width="30" height="30" rx="4" fill="#00f0ff" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+    <rect x="96" y="0" width="30" height="30" rx="4" fill="#00f0ff" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+  </g>
+
+  <!-- T Piece (Purple) -->
+  <g transform="translate(200, 110)">
+    <rect x="32" y="0" width="30" height="30" rx="4" fill="#a855f7" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+    <rect x="0" y="32" width="30" height="30" rx="4" fill="#a855f7" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+    <rect x="32" y="32" width="30" height="30" rx="4" fill="#a855f7" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+    <rect x="64" y="32" width="30" height="30" rx="4" fill="#a855f7" stroke="#ffffff" stroke-width="1.5" filter="url(#cyanGlow)"/>
+  </g>
+
+  <!-- L Piece (Orange) -->
+  <g transform="translate(280, 50)">
+    <rect x="0" y="0" width="30" height="30" rx="4" fill="#f97316" stroke="#ffffff" stroke-width="1.5"/>
+    <rect x="0" y="32" width="30" height="30" rx="4" fill="#f97316" stroke="#ffffff" stroke-width="1.5"/>
+    <rect x="0" y="64" width="30" height="30" rx="4" fill="#f97316" stroke="#ffffff" stroke-width="1.5"/>
+    <rect x="32" y="64" width="30" height="30" rx="4" fill="#f97316" stroke="#ffffff" stroke-width="1.5"/>
+  </g>
+
+  <!-- Title Text overlay -->
+  <text x="200" y="222" text-anchor="middle" fill="#00f0ff" font-family="'Outfit', 'Segoe UI', sans-serif" font-weight="800" font-size="16" letter-spacing="3">NEON CYBER TETRIS</text>
+</svg>

@@ -1,0 +1,15 @@
+{
+  "id": "cyber-racer",
+  "title": "Cyber Turbo Racer",
+  "description": "High-speed arcade highway racing! Steer through heavy traffic with your joystick and trigger Nitro boost to score high.",
+  "icon": "fa-solid fa-car-burst",
+  "thumbnail": "games/cyber-racer/thumbnail.svg",
+  "themeColor": "rose",
+  "script": "games/cyber-racer/game.js",
+  "controls": {
+    "joystickAxis": "horizontal",
+    "buttons": [
+      { "id": "btnA", "label": "NITRO", "color": "rose" }
+    ]
+  }
+}

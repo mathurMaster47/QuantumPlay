@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pingpongBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#022c22"/>
+      <stop offset="50%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#090d16"/>
+    </linearGradient>
+    <filter id="emeraldGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="240" fill="url(#pingpongBg)"/>
+
+  <!-- Table Tennis Table 2.5D Perspective -->
+  <polygon points="80,90 320,90 370,210 30,210" fill="#047857" stroke="#34d399" stroke-width="3"/>
+  <line x1="200" y1="90" x2="200" y2="210" stroke="#ffffff" stroke-width="2" opacity="0.6"/>
+  <!-- Net -->
+  <line x1="70" y1="140" x2="330" y2="140" stroke="#a7f3d0" stroke-width="4" filter="url(#emeraldGlow)"/>
+
+  <!-- Flaming Ping Pong Ball -->
+  <circle cx="230" cy="115" r="12" fill="#ffffff" filter="url(#emeraldGlow)"/>
+  <path d="M 230,115 Q 260,95 280,105 Q 250,120 230,115 Z" fill="#fbbf24" opacity="0.8"/>
+
+  <!-- Player Paddle (Rose/Emerald) -->
+  <g transform="translate(160, 175)">
+    <circle cx="0" cy="0" r="22" fill="#f43f5e" stroke="#ffffff" stroke-width="2"/>
+    <rect x="-4" y="20" width="8" height="20" fill="#78350f" rx="3"/>
+  </g>
+
+  <!-- Title Text overlay -->
+  <text x="200" y="222" text-anchor="middle" fill="#34d399" font-family="'Outfit', 'Segoe UI', sans-serif" font-weight="800" font-size="16" letter-spacing="3">CHAMPION TABLE TENNIS</text>
+</svg>
