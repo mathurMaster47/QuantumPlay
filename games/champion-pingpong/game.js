@@ -1,29 +1,33 @@
 /**
  * Champion Island Table Tennis Game Module for QuantumPlay
- * Widescreen (1200x675) Laptop Display Edition
+ * Dynamic Screen Size Edition
  */
 
 (function () {
     let animationFrameId = null;
 
     function start(canvas, ctx, getInput, onGameOver) {
-        const TABLE_TOP_Y = 130;
-        const TABLE_BOTTOM_Y = 560;
-        const TABLE_LEFT_TOP = 360;
-        const TABLE_RIGHT_TOP = 840;
-        const TABLE_LEFT_BOTTOM = 220;
-        const TABLE_RIGHT_BOTTOM = 980;
+        // Dynamic dimensions based on canvas size
+        const scaleX = canvas.width / 1200;
+        const scaleY = canvas.height / 675;
+        
+        const TABLE_TOP_Y = Math.round(130 * scaleY);
+        const TABLE_BOTTOM_Y = Math.round(560 * scaleY);
+        const TABLE_LEFT_TOP = Math.round(360 * scaleX);
+        const TABLE_RIGHT_TOP = Math.round(840 * scaleX);
+        const TABLE_LEFT_BOTTOM = Math.round(220 * scaleX);
+        const TABLE_RIGHT_BOTTOM = Math.round(980 * scaleX);
         const NET_Y = (TABLE_TOP_Y + TABLE_BOTTOM_Y) / 2;
 
-        let player = { x: canvas.width / 2, y: TABLE_BOTTOM_Y + 40, radius: 32, speed: 9 };
-        let opponent = { x: canvas.width / 2, y: TABLE_TOP_Y - 20, radius: 26, speed: 5 };
+        let player = { x: canvas.width / 2, y: TABLE_BOTTOM_Y + Math.round(40 * scaleY), radius: Math.round(32 * scaleX), speed: Math.round(9 * scaleX) };
+        let opponent = { x: canvas.width / 2, y: TABLE_TOP_Y - Math.round(20 * scaleY), radius: Math.round(26 * scaleX), speed: Math.round(5 * scaleX) };
         let ball = {
             x: canvas.width / 2,
-            y: TABLE_TOP_Y + 50,
+            y: TABLE_TOP_Y + Math.round(50 * scaleY),
             z: 0,
-            vx: 3,
-            vy: 5.5,
-            radius: 11,
+            vx: Math.round(3 * scaleX),
+            vy: Math.round(5.5 * scaleY),
+            radius: Math.round(11 * scaleX),
             state: 'TOP_TO_BOTTOM'
         };
 
@@ -285,35 +289,35 @@
 
             // --- LEFT PANEL: PLAYER SCORE & STATS ---
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(40, 40, 150, 595);
+            ctx.fillRect(Math.round(40 * scaleX), Math.round(40 * scaleY), Math.round(150 * scaleX), Math.round(595 * scaleY));
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.strokeRect(40, 40, 150, 595);
+            ctx.strokeRect(Math.round(40 * scaleX), Math.round(40 * scaleY), Math.round(150 * scaleX), Math.round(595 * scaleY));
 
             ctx.fillStyle = '#34d399';
-            ctx.font = '800 18px Outfit, sans-serif';
-            ctx.fillText('PLAYER (P1)', 55, 80);
+            ctx.font = `800 ${Math.round(18 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('PLAYER (P1)', Math.round(55 * scaleX), Math.round(80 * scaleY));
             ctx.fillStyle = '#ffffff';
-            ctx.font = '800 52px Outfit, sans-serif';
-            ctx.fillText(`${playerScore}`, 55, 150);
+            ctx.font = `800 ${Math.round(52 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText(`${playerScore}`, Math.round(55 * scaleX), Math.round(150 * scaleY));
 
             if (rallyCount > 0) {
                 ctx.fillStyle = '#fbbf24';
-                ctx.font = '800 14px Outfit, sans-serif';
-                ctx.fillText(`RALLY: ${rallyCount}`, 55, 210);
+                ctx.font = `800 ${Math.round(14 * scaleX)}px Outfit, sans-serif`;
+                ctx.fillText(`RALLY: ${rallyCount}`, Math.round(55 * scaleX), Math.round(210 * scaleY));
             }
 
             // --- RIGHT PANEL: OPPONENT SCORE & STATS ---
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(1010, 40, 150, 595);
+            ctx.fillRect(Math.round(1010 * scaleX), Math.round(40 * scaleY), Math.round(150 * scaleX), Math.round(595 * scaleY));
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.strokeRect(1010, 40, 150, 595);
+            ctx.strokeRect(Math.round(1010 * scaleX), Math.round(40 * scaleY), Math.round(150 * scaleX), Math.round(595 * scaleY));
 
             ctx.fillStyle = '#38bdf8';
-            ctx.font = '800 18px Outfit, sans-serif';
-            ctx.fillText('KAPPA BOT', 1025, 80);
+            ctx.font = `800 ${Math.round(18 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('KAPPA BOT', Math.round(1025 * scaleX), Math.round(80 * scaleY));
             ctx.fillStyle = '#ffffff';
-            ctx.font = '800 52px Outfit, sans-serif';
-            ctx.fillText(`${opponentScore}`, 1025, 150);
+            ctx.font = `800 ${Math.round(52 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText(`${opponentScore}`, Math.round(1025 * scaleX), Math.round(150 * scaleY));
 
             if (isGameOver) {
                 const playerWon = playerScore >= 10;

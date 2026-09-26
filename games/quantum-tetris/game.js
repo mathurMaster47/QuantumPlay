@@ -1,15 +1,19 @@
 /**
  * Neon Cyber Tetris Game Module for QuantumPlay
- * Widescreen (1200x675) Laptop Display Edition
+ * Dynamic Screen Size Edition
  */
 
 (function () {
     let animationFrameId = null;
 
     function start(canvas, ctx, getInput, onGameOver) {
+        // Dynamic dimensions based on canvas size
+        const scaleX = canvas.width / 1200;
+        const scaleY = canvas.height / 675;
+        
         const COLS = 10;
         const ROWS = 20;
-        const BLOCK_SIZE = 28;
+        const BLOCK_SIZE = Math.round(28 * Math.min(scaleX, scaleY));
         const BOARD_WIDTH = COLS * BLOCK_SIZE;
         const BOARD_HEIGHT = ROWS * BLOCK_SIZE;
         const OFFSET_X = (canvas.width - BOARD_WIDTH) / 2;
@@ -326,39 +330,39 @@
             ctx.strokeRect(60, OFFSET_Y, 320, BOARD_HEIGHT);
 
             ctx.fillStyle = '#00f0ff';
-            ctx.font = '800 28px Outfit, sans-serif';
-            ctx.fillText('CYBER TETRIS', 90, OFFSET_Y + 45);
+            ctx.font = `800 ${Math.round(28 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('CYBER TETRIS', Math.round(90 * scaleX), OFFSET_Y + Math.round(45 * scaleY));
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = '600 14px Outfit, sans-serif';
-            ctx.fillText('SCORE', 90, OFFSET_Y + 110);
+            ctx.font = `600 ${Math.round(14 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('SCORE', Math.round(90 * scaleX), OFFSET_Y + Math.round(110 * scaleY));
             ctx.fillStyle = '#00f0ff';
-            ctx.font = '800 42px Outfit, sans-serif';
-            ctx.fillText(`${score}`, 90, OFFSET_Y + 160);
+            ctx.font = `800 ${Math.round(42 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText(`${score}`, Math.round(90 * scaleX), OFFSET_Y + Math.round(160 * scaleY));
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = '600 14px Outfit, sans-serif';
-            ctx.fillText('LEVEL', 90, OFFSET_Y + 230);
+            ctx.font = `600 ${Math.round(14 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('LEVEL', Math.round(90 * scaleX), OFFSET_Y + Math.round(230 * scaleY));
             ctx.fillStyle = '#a855f7';
-            ctx.font = '800 36px Outfit, sans-serif';
-            ctx.fillText(`${level}`, 90, OFFSET_Y + 275);
+            ctx.font = `800 ${Math.round(36 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText(`${level}`, Math.round(90 * scaleX), OFFSET_Y + Math.round(275 * scaleY));
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = '600 14px Outfit, sans-serif';
-            ctx.fillText('LINES CLEARED', 90, OFFSET_Y + 340);
+            ctx.font = `600 ${Math.round(14 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('LINES CLEARED', Math.round(90 * scaleX), OFFSET_Y + Math.round(340 * scaleY));
             ctx.fillStyle = '#10b981';
-            ctx.font = '800 36px Outfit, sans-serif';
-            ctx.fillText(`${lines}`, 90, OFFSET_Y + 385);
+            ctx.font = `800 ${Math.round(36 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText(`${lines}`, Math.round(90 * scaleX), OFFSET_Y + Math.round(385 * scaleY));
 
             // --- RIGHT PANEL: NEXT PIECE PREVIEW ---
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(820, OFFSET_Y, 320, BOARD_HEIGHT);
+            ctx.fillRect(Math.round(820 * scaleX), OFFSET_Y, Math.round(320 * scaleX), BOARD_HEIGHT);
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.strokeRect(820, OFFSET_Y, 320, BOARD_HEIGHT);
+            ctx.strokeRect(Math.round(820 * scaleX), OFFSET_Y, Math.round(320 * scaleX), BOARD_HEIGHT);
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = '600 14px Outfit, sans-serif';
-            ctx.fillText('NEXT PIECE', 850, OFFSET_Y + 45);
+            ctx.font = `600 ${Math.round(14 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('NEXT PIECE', Math.round(850 * scaleX), OFFSET_Y + Math.round(45 * scaleY));
 
             if (nextPiece) {
                 ctx.save();
@@ -382,13 +386,13 @@
 
             // Controls Hint
             ctx.fillStyle = '#94a3b8';
-            ctx.font = '600 14px Outfit, sans-serif';
-            ctx.fillText('CONTROLS:', 850, OFFSET_Y + 240);
-            ctx.font = '13px sans-serif';
-            ctx.fillText('• Joystick Left / Right: Move', 850, OFFSET_Y + 270);
-            ctx.fillText('• Joystick Down: Soft Drop', 850, OFFSET_Y + 295);
-            ctx.fillText('• Button [ROTATE]: Flip Block', 850, OFFSET_Y + 320);
-            ctx.fillText('• Button [DROP]: Hard Drop', 850, OFFSET_Y + 345);
+            ctx.font = `600 ${Math.round(14 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('CONTROLS:', Math.round(850 * scaleX), OFFSET_Y + Math.round(240 * scaleY));
+            ctx.font = `${Math.round(13 * scaleX)}px sans-serif`;
+            ctx.fillText('• Joystick Left / Right: Move', Math.round(850 * scaleX), OFFSET_Y + Math.round(270 * scaleY));
+            ctx.fillText('• Joystick Down: Soft Drop', Math.round(850 * scaleX), OFFSET_Y + Math.round(295 * scaleY));
+            ctx.fillText('• Button [ROTATE]: Flip Block', Math.round(850 * scaleX), OFFSET_Y + Math.round(320 * scaleY));
+            ctx.fillText('• Button [DROP]: Hard Drop', Math.round(850 * scaleX), OFFSET_Y + Math.round(345 * scaleY));
 
             // Game Over — trigger overlay
             if (isGameOver) {

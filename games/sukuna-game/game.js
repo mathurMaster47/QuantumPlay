@@ -1,6 +1,6 @@
 /**
  * Sukuna - Magical Physics Puzzle Game Module for QuantumPlay
- * Widescreen (1200x675) Laptop Display Edition
+ * Dynamic Screen Size Edition
  * Powered by Matter.js Physics Engine
  */
 
@@ -9,23 +9,23 @@
     let animationFrameId = null;
 
     const CELESTIAL_TIERS = [
-        { tier: 0, name: "Star Gem", radius: 18, color: "#ffe066", emoji: "⭐", score: 2 },
-        { tier: 1, name: "Moon Shard", radius: 25, color: "#80e5ff", emoji: "🌙", score: 4 },
-        { tier: 2, name: "Sun Drop", radius: 32, color: "#ff8c1a", emoji: "☀️", score: 8 },
-        { tier: 3, name: "Galaxy Petal", radius: 40, color: "#ff66cc", emoji: "🌸", score: 16 },
-        { tier: 4, name: "Nebula Pearl", radius: 48, color: "#b366ff", emoji: "🔮", score: 32 },
-        { tier: 5, name: "Comet Ring", radius: 57, color: "#33ffff", emoji: "🪐", score: 64 },
+        { tier: 0, name: "Star Gem", baseRadius: 18, color: "#ffe066", emoji: "⭐", score: 2 },
+        { tier: 1, name: "Moon Shard", baseRadius: 25, color: "#80e5ff", emoji: "🌙", score: 4 },
+        { tier: 2, name: "Sun Drop", baseRadius: 32, color: "#ff8c1a", emoji: "☀️", score: 8 },
+        { tier: 3, name: "Galaxy Petal", baseRadius: 40, color: "#ff66cc", emoji: "🌸", score: 16 },
+        { tier: 4, name: "Nebula Pearl", baseRadius: 48, color: "#b366ff", emoji: "🔮", score: 32 },
+        { tier: 5, name: "Comet Ring", baseRadius: 57, color: "#33ffff", emoji: "🪐", score: 64 },
     ];
 
-    const CANVAS_WIDTH = 1200;
-    const CANVAS_HEIGHT = 675;
+    // Dynamic dimensions based on canvas size
+    let CANVAS_WIDTH, CANVAS_HEIGHT;
+    let CONTAINER_LEFT, CONTAINER_RIGHT, CONTAINER_WIDTH;
+    let DROP_Y, LIMIT_Y;
+    
+    // Scaling factors for responsive design
+    let scaleX, scaleY;
 
-    // Centered Physics Container Box
-    const CONTAINER_LEFT = 380;
-    const CONTAINER_RIGHT = 820;
-    const CONTAINER_WIDTH = CONTAINER_RIGHT - CONTAINER_LEFT;
-    const DROP_Y = 55;
-    const LIMIT_Y = 115;
+    // Game timing constants
     const GAME_OVER_BUFFER_MS = 1500;
     const DROP_COOLDOWN_MS = 500;
 
@@ -36,7 +36,7 @@
     let previewBody = null;
     let canDrop = true;
     let isGameOver = false;
-    let pointerX = CANVAS_WIDTH / 2;
+    let pointerX;
     let lastBtnAState = false;
 
     const bodiesAboveLimit = new Map();
@@ -128,12 +128,43 @@
         }
     }
 
+    function initDynamicDimensions(canvas) {
+        // Set canvas dimensions
+        CANVAS_WIDTH = canvas.width;
+        CANVAS_HEIGHT = canvas.height;
+        
+        // Calculate scaling factors based on original 1200x675 design
+        scaleX = CANVAS_WIDTH / 1200;
+        scaleY = CANVAS_HEIGHT / 675;
+        
+        // Calculate container dimensions (maintain aspect ratio of original design)
+        CONTAINER_WIDTH = Math.round(440 * scaleX); // Original was 440px
+        CONTAINER_LEFT = Math.round((CANVAS_WIDTH - CONTAINER_WIDTH) / 2);
+        CONTAINER_RIGHT = CONTAINER_LEFT + CONTAINER_WIDTH;
+        
+        // Calculate Y positions
+        DROP_Y = Math.round(55 * scaleY);
+        LIMIT_Y = Math.round(115 * scaleY);
+        
+        // Initialize pointer position
+        pointerX = CANVAS_WIDTH / 2;
+    }
+
+    function getScaledRadius(baseRadius) {
+        // Use the average of scaleX and scaleY for radius scaling
+        const avgScale = (scaleX + scaleY) / 2;
+        return Math.round(baseRadius * avgScale);
+    }
+
     function start(canvas, ctx, getInput, onGameOver) {
         initAudioContext();
         if (typeof Matter === 'undefined') {
             console.error('Matter.js is required for Sukuna Game.');
             return;
         }
+
+        // Initialize dynamic dimensions based on actual canvas size
+        initDynamicDimensions(canvas);
 
         const { Engine, Bodies, Composite, Events, Body } = Matter;
 
@@ -142,7 +173,6 @@
         canDrop = true;
         mergeParticles = [];
         bodiesAboveLimit.clear();
-        pointerX = CANVAS_WIDTH / 2;
         lastBtnAState = false;
 
         engine = Engine.create({ gravity: { y: 0.98, scale: 0.001 } });
@@ -150,9 +180,9 @@
 
         // Static Boundaries around centered container
         const wallOptions = { isStatic: true, friction: 0.2, render: { visible: false } };
-        const leftWall = Bodies.rectangle(CONTAINER_LEFT - 10, CANVAS_HEIGHT / 2, 20, CANVAS_HEIGHT, wallOptions);
-        const rightWall = Bodies.rectangle(CONTAINER_RIGHT + 10, CANVAS_HEIGHT / 2, 20, CANVAS_HEIGHT, wallOptions);
-        const floor = Bodies.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 25, CONTAINER_WIDTH + 20, 30, wallOptions);
+        const leftWall = Bodies.rectangle(CONTAINER_LEFT - (10 * scaleX), CANVAS_HEIGHT / 2, (20 * scaleX), CANVAS_HEIGHT, wallOptions);
+        const rightWall = Bodies.rectangle(CONTAINER_RIGHT + (10 * scaleX), CANVAS_HEIGHT / 2, (20 * scaleX), CANVAS_HEIGHT, wallOptions);
+        const floor = Bodies.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT - (25 * scaleY), CONTAINER_WIDTH + (20 * scaleX), (30 * scaleY), wallOptions);
         Composite.add(world, [leftWall, rightWall, floor]);
 
         currentItemTier = Math.floor(Math.random() * 4);
@@ -230,7 +260,7 @@
         function spawnPreviewFruit() {
             if (isGameOver) return;
             const item = CELESTIAL_TIERS[currentItemTier];
-            const r = item.radius;
+            const r = getScaledRadius(item.baseRadius);
             pointerX = Math.max(CONTAINER_LEFT + r + 5, Math.min(CONTAINER_RIGHT - r - 5, pointerX));
 
             previewBody = Bodies.circle(pointerX, DROP_Y, r, {
@@ -243,7 +273,7 @@
 
         function spawnFruit(x, y, tier) {
             const item = CELESTIAL_TIERS[tier];
-            const circle = Bodies.circle(x, y, item.radius, {
+            const circle = Bodies.circle(x, y, getScaledRadius(item.baseRadius), {
                 friction: 0.12,
                 restitution: 0.18,
                 density: 0.001,
@@ -255,7 +285,7 @@
 
         function updatePointerX(newX) {
             if (isGameOver || currentItemTier === null) return;
-            const r = CELESTIAL_TIERS[currentItemTier].radius;
+            const r = getScaledRadius(CELESTIAL_TIERS[currentItemTier].baseRadius);
             pointerX = Math.max(CONTAINER_LEFT + r + 5, Math.min(CONTAINER_RIGHT - r - 5, newX));
             if (previewBody) {
                 Body.setPosition(previewBody, { x: pointerX, y: DROP_Y });
@@ -310,10 +340,10 @@
 
             // Container Background Surface
             ctx.fillStyle = 'rgba(45, 11, 54, 0.7)';
-            ctx.fillRect(CONTAINER_LEFT, 0, CONTAINER_WIDTH, CANVAS_HEIGHT - 40);
+            ctx.fillRect(CONTAINER_LEFT, 0, CONTAINER_WIDTH, CANVAS_HEIGHT - Math.round(40 * scaleY));
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
             ctx.lineWidth = 4;
-            ctx.strokeRect(CONTAINER_LEFT, 0, CONTAINER_WIDTH, CANVAS_HEIGHT - 40);
+            ctx.strokeRect(CONTAINER_LEFT, 0, CONTAINER_WIDTH, CANVAS_HEIGHT - Math.round(40 * scaleY));
 
             // Upper Limit Line
             ctx.beginPath();
@@ -329,7 +359,7 @@
             if (canDrop && !isGameOver) {
                 ctx.beginPath();
                 ctx.moveTo(pointerX, DROP_Y);
-                ctx.lineTo(pointerX, CANVAS_HEIGHT - 40);
+                ctx.lineTo(pointerX, CANVAS_HEIGHT - Math.round(40 * scaleY));
                 ctx.strokeStyle = 'rgba(255, 51, 170, 0.3)';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([4, 4]);
@@ -344,10 +374,11 @@
                 if (tier !== undefined) {
                     const item = CELESTIAL_TIERS[tier];
                     const isPreview = body.plugin.isPreview;
+                    const scaledRadius = getScaledRadius(item.baseRadius);
 
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(body.position.x, body.position.y, item.radius - 2, 0, Math.PI * 2);
+                    ctx.arc(body.position.x, body.position.y, scaledRadius - 2, 0, Math.PI * 2);
                     ctx.strokeStyle = item.color;
                     ctx.lineWidth = 3;
                     ctx.shadowColor = item.color;
@@ -357,14 +388,14 @@
 
                     ctx.save();
                     ctx.beginPath();
-                    ctx.arc(body.position.x, body.position.y, item.radius, 0, Math.PI * 2);
+                    ctx.arc(body.position.x, body.position.y, scaledRadius, 0, Math.PI * 2);
                     ctx.fillStyle = item.color;
                     ctx.fill();
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
                     ctx.lineWidth = 2;
                     ctx.stroke();
 
-                    ctx.font = `bold ${item.radius * 0.95}px sans-serif`;
+                    ctx.font = `bold ${scaledRadius * 0.95}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillStyle = '#ffffff';
@@ -377,73 +408,73 @@
 
             // --- LEFT PANEL: LOGO & STATS ---
             ctx.fillStyle = '#ffffff';
-            ctx.font = '800 32px Outfit, sans-serif';
-            ctx.fillText('SUKUNA PUZZLE', 40, 60);
+            ctx.font = `800 ${Math.round(32 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('SUKUNA PUZZLE', Math.round(40 * scaleX), Math.round(60 * scaleY));
 
             // Stat Card 1: Score
             ctx.fillStyle = 'rgba(255, 51, 170, 0.1)';
-            ctx.fillRect(40, 90, 140, 70);
+            ctx.fillRect(Math.round(40 * scaleX), Math.round(90 * scaleY), Math.round(140 * scaleX), Math.round(70 * scaleY));
             ctx.strokeStyle = 'rgba(255, 51, 170, 0.3)';
-            ctx.strokeRect(40, 90, 140, 70);
+            ctx.strokeRect(Math.round(40 * scaleX), Math.round(90 * scaleY), Math.round(140 * scaleX), Math.round(70 * scaleY));
             ctx.fillStyle = '#d8c3df';
-            ctx.font = '600 12px Outfit, sans-serif';
-            ctx.fillText('SCORE', 55, 112);
+            ctx.font = `600 ${Math.round(12 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('SCORE', Math.round(55 * scaleX), Math.round(112 * scaleY));
             ctx.fillStyle = '#ff33aa';
-            ctx.font = '800 28px Outfit, sans-serif';
-            ctx.fillText(`${score}`, 55, 148);
+            ctx.font = `800 ${Math.round(28 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText(`${score}`, Math.round(55 * scaleX), Math.round(148 * scaleY));
 
             // Stat Card 2: Best
             ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
-            ctx.fillRect(195, 90, 140, 70);
+            ctx.fillRect(Math.round(195 * scaleX), Math.round(90 * scaleY), Math.round(140 * scaleX), Math.round(70 * scaleY));
             ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
-            ctx.strokeRect(195, 90, 140, 70);
+            ctx.strokeRect(Math.round(195 * scaleX), Math.round(90 * scaleY), Math.round(140 * scaleX), Math.round(70 * scaleY));
             ctx.fillStyle = '#d8c3df';
-            ctx.font = '600 12px Outfit, sans-serif';
-            ctx.fillText('BEST', 210, 112);
+            ctx.font = `600 ${Math.round(12 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('BEST', Math.round(210 * scaleX), Math.round(112 * scaleY));
             ctx.fillStyle = '#00f0ff';
-            ctx.font = '800 28px Outfit, sans-serif';
-            ctx.fillText(`${highScore}`, 210, 148);
+            ctx.font = `800 ${Math.round(28 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText(`${highScore}`, Math.round(210 * scaleX), Math.round(148 * scaleY));
 
             // Next Item Preview Card
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(40, 180, 295, 100);
+            ctx.fillRect(Math.round(40 * scaleX), Math.round(180 * scaleY), Math.round(295 * scaleX), Math.round(100 * scaleY));
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.strokeRect(40, 180, 295, 100);
+            ctx.strokeRect(Math.round(40 * scaleX), Math.round(180 * scaleY), Math.round(295 * scaleX), Math.round(100 * scaleY));
             ctx.fillStyle = '#d8c3df';
-            ctx.font = '600 12px Outfit, sans-serif';
-            ctx.fillText('NEXT CELESTIAL ITEM', 55, 205);
+            ctx.font = `600 ${Math.round(12 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('NEXT CELESTIAL ITEM', Math.round(55 * scaleX), Math.round(205 * scaleY));
 
             if (nextItemTier !== null && CELESTIAL_TIERS[nextItemTier]) {
                 const nextItem = CELESTIAL_TIERS[nextItemTier];
-                ctx.font = '36px sans-serif';
-                ctx.fillText(nextItem.emoji, 60, 255);
+                ctx.font = `${Math.round(36 * scaleX)}px sans-serif`;
+                ctx.fillText(nextItem.emoji, Math.round(60 * scaleX), Math.round(255 * scaleY));
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '800 18px Outfit, sans-serif';
-                ctx.fillText(nextItem.name, 120, 250);
+                ctx.font = `800 ${Math.round(18 * scaleX)}px Outfit, sans-serif`;
+                ctx.fillText(nextItem.name, Math.round(120 * scaleX), Math.round(250 * scaleY));
             }
 
             // --- RIGHT PANEL: EVOLUTION CHAIN ---
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-            ctx.fillRect(860, 40, 300, 595);
+            ctx.fillRect(Math.round(860 * scaleX), Math.round(40 * scaleY), Math.round(300 * scaleX), Math.round(595 * scaleY));
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.strokeRect(860, 40, 300, 595);
+            ctx.strokeRect(Math.round(860 * scaleX), Math.round(40 * scaleY), Math.round(300 * scaleX), Math.round(595 * scaleY));
 
             ctx.fillStyle = '#ff33aa';
-            ctx.font = '800 18px Outfit, sans-serif';
-            ctx.fillText('EVOLUTION HIERARCHY', 880, 75);
+            ctx.font = `800 ${Math.round(18 * scaleX)}px Outfit, sans-serif`;
+            ctx.fillText('EVOLUTION HIERARCHY', Math.round(880 * scaleX), Math.round(75 * scaleY));
 
             CELESTIAL_TIERS.forEach((item, idx) => {
-                const yPos = 110 + idx * 85;
+                const yPos = Math.round(110 * scaleY) + idx * Math.round(85 * scaleY);
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-                ctx.fillRect(875, yPos, 270, 70);
-                ctx.font = '28px sans-serif';
-                ctx.fillText(item.emoji, 890, yPos + 46);
+                ctx.fillRect(Math.round(875 * scaleX), yPos, Math.round(270 * scaleX), Math.round(70 * scaleY));
+                ctx.font = `${Math.round(28 * scaleX)}px sans-serif`;
+                ctx.fillText(item.emoji, Math.round(890 * scaleX), yPos + Math.round(46 * scaleY));
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '600 16px Outfit, sans-serif';
-                ctx.fillText(item.name, 940, yPos + 35);
+                ctx.font = `600 ${Math.round(16 * scaleX)}px Outfit, sans-serif`;
+                ctx.fillText(item.name, Math.round(940 * scaleX), yPos + Math.round(35 * scaleY));
                 ctx.fillStyle = '#d8c3df';
-                ctx.font = '12px Outfit, sans-serif';
-                ctx.fillText(`+${item.score} Points`, 940, yPos + 54);
+                ctx.font = `${Math.round(12 * scaleX)}px Outfit, sans-serif`;
+                ctx.fillText(`+${item.score} Points`, Math.round(940 * scaleX), yPos + Math.round(54 * scaleY));
             });
 
             // Game Over — trigger overlay, stop loop
