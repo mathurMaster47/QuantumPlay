@@ -151,28 +151,32 @@ window.QuantumApp = (function () {
 
         if (displayRoomId) displayRoomId.textContent = roomId;
 
-        // Only generate QR code if container exists and QRCode library is loaded
-        const qrContainer = document.getElementById('qrcode');
-        if (qrContainer && typeof QRCode !== 'undefined') {
-            try {
-                qrContainer.innerHTML = '';
-                new QRCode(qrContainer, {
-                    text: controllerUrl,
-                    width: 180,
-                    height: 180,
-                    colorDark: "#0f172a",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.H
-                });
-            } catch (err) {
-                console.error('Failed to generate QR code:', err);
-                // Fallback: show the URL text if QR generation fails
-                qrContainer.innerHTML = `<div class="text-xs text-gray-400 break-all p-2">${controllerUrl}</div>`;
+        // Generate QR code asynchronously to avoid blocking
+        setTimeout(() => {
+            const qrContainer = document.getElementById('qrcode');
+            if (!qrContainer) return;
+
+            if (typeof QRCode !== 'undefined') {
+                try {
+                    qrContainer.innerHTML = '';
+                    new QRCode(qrContainer, {
+                        text: controllerUrl,
+                        width: 180,
+                        height: 180,
+                        colorDark: "#0f172a",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } catch (err) {
+                    console.error('Failed to generate QR code:', err);
+                    // Fallback: show the URL text if QR generation fails
+                    qrContainer.innerHTML = `<div class="text-xs text-gray-400 break-all p-2">${controllerUrl}</div>`;
+                }
+            } else {
+                // QRCode library not loaded yet, show loading message
+                qrContainer.innerHTML = '<div class="text-gray-400 text-sm">Loading QR library...</div>';
             }
-        } else if (qrContainer) {
-            // QRCode library not loaded yet, show loading message
-            qrContainer.innerHTML = '<div class="text-gray-400 text-sm">Loading QR library...</div>';
-        }
+        }, 100); // Small delay to ensure DOM is ready
     }
 
     /**
@@ -251,7 +255,12 @@ window.QuantumApp = (function () {
         if (roomId) {
             // Only update QR code if controller is not already connected
             if (!isControllerConnected) {
+                // Show QR modal first, then generate QR code
+                if (qrModal) qrModal.classList.remove('hidden');
                 updateQRCode(roomId);
+            } else {
+                // If controller is connected, ensure QR modal is hidden
+                if (qrModal) qrModal.classList.add('hidden');
             }
         } else if (displayRoomId) {
             displayRoomId.textContent = 'Connecting to server...';
@@ -287,6 +296,10 @@ window.QuantumApp = (function () {
             );
         } catch (err) {
             console.error(`Failed to launch game ${gameId}:`, err);
+            // Show error to user
+            if (currentGameTitle) {
+                currentGameTitle.textContent = 'Game Error - Try Again';
+            }
         }
     }
 
@@ -302,9 +315,11 @@ window.QuantumApp = (function () {
             const isControllerConnected = gameControllerStatus && 
                 gameControllerStatus.innerHTML.includes('Phone Connected');
             
-            // If controller is connected, hide QR modal temporarily during restart
-            if (isControllerConnected && qrModal) {
-                qrModal.classList.add('hidden');
+            // Always ensure QR modal is properly handled during restart
+            if (isControllerConnected) {
+                if (qrModal) qrModal.classList.add('hidden');
+            } else {
+                if (qrModal) qrModal.classList.remove('hidden');
             }
             
             launchGame(activeGameId, isControllerConnected);
