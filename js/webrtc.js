@@ -33,11 +33,82 @@
             try {
                 trysteroModule = await import('https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm');
             } catch (err) {
-                console.error('Failed to load Trystero WebRTC library:', err);
-                throw err;
+                console.warn('Primary Trystero CDN failed, trying backup...', err);
+                try {
+                    trysteroModule = await import('https://esm.sh/@trystero-p2p/nostr@0.25.4');
+                } catch (err2) {
+                    console.error('All Trystero WebRTC imports failed:', err2);
+                    throw err2;
+                }
             }
         }
         return trysteroModule;
+    }
+
+    /**
+     * Helper to safely bind actions regardless of Trystero version:
+     * In Trystero < 0.20: room.makeAction(name) returns [sendFn, getFn]
+     * In Trystero >= 0.25: room.makeAction(name) returns { send, onMessage, ... }
+     */
+    function bindAction(roomInstance, name, onMessage) {
+        let actionResult = null;
+        try {
+            actionResult = roomInstance.makeAction(name);
+        } catch (e) {
+            console.error(`makeAction("${name}") failed:`, e);
+            return () => {};
+        }
+
+        // Trystero legacy [send, get]
+        if (Array.isArray(actionResult)) {
+            const [sendFn, getFn] = actionResult;
+            if (typeof getFn === 'function' && onMessage) {
+                getFn((data, peerId) => onMessage(data, peerId));
+            }
+            return (payload) => {
+                try { sendFn(payload); } catch (e) {}
+            };
+        }
+
+        // Trystero modern (0.25+): returns { send, onMessage, ... }
+        if (actionResult && typeof actionResult === 'object') {
+            if (onMessage) {
+                actionResult.onMessage = (data, meta) => {
+                    const peerId = meta && typeof meta === 'object' ? meta.peerId : meta;
+                    onMessage(data, peerId);
+                };
+            }
+            return (payload) => {
+                if (typeof actionResult.send === 'function') {
+                    actionResult.send(payload).catch(() => {});
+                }
+            };
+        }
+
+        return () => {};
+    }
+
+    /**
+     * Helper to bind peer join & leave handlers regardless of Trystero version:
+     * In Trystero < 0.20: room.onPeerJoin(fn) (function call)
+     * In Trystero >= 0.25: room.onPeerJoin = fn (property setter)
+     */
+    function bindPeerEvents(roomInstance, onJoin, onLeave) {
+        if (!roomInstance) return;
+
+        // Peer Join
+        if (typeof roomInstance.onPeerJoin === 'function') {
+            roomInstance.onPeerJoin(onJoin);
+        } else {
+            roomInstance.onPeerJoin = onJoin;
+        }
+
+        // Peer Leave
+        if (typeof roomInstance.onPeerLeave === 'function') {
+            roomInstance.onPeerLeave(onLeave);
+        } else {
+            roomInstance.onPeerLeave = onLeave;
+        }
     }
 
     /**
@@ -58,35 +129,38 @@
             const { joinRoom } = await getTrystero();
             room = joinRoom({ appId: 'quantumplay-arcade' }, roomId);
 
-            const [sendConfig, getConfig] = room.makeAction('CONFIG');
-            const [sendInput, getInput] = room.makeAction('INPUT');
-
-            sendConfigFn = sendConfig;
-            sendInputFn = sendInput;
-
-            getInput((data, peerId) => {
+            // Bind actions
+            sendConfigFn = bindAction(room, 'CONFIG', () => {});
+            sendInputFn = bindAction(room, 'INPUT', (data) => {
                 if (data) Object.assign(controllerInput, data);
             });
 
-            room.onPeerJoin((peerId) => {
-                console.log('Mobile Controller P2P Peer Joined:', peerId);
-                if (activeControlConfig && sendConfigFn) {
-                    try { sendConfigFn(activeControlConfig); } catch (e) {}
+            // Bind peer connectivity
+            bindPeerEvents(
+                room,
+                (peerId) => {
+                    console.log('Mobile Controller P2P Peer Joined:', peerId);
+                    if (activeControlConfig && sendConfigFn) {
+                        try { sendConfigFn(activeControlConfig); } catch (e) {}
+                    }
+                    if (callbacks && callbacks.onClientConnected) {
+                        callbacks.onClientConnected();
+                    }
+                },
+                (peerId) => {
+                    console.log('Mobile Controller P2P Peer Left:', peerId);
+                    if (callbacks && callbacks.onClientDisconnected) {
+                        callbacks.onClientDisconnected();
+                    }
                 }
-                if (callbacks.onClientConnected) callbacks.onClientConnected();
-            });
+            );
 
-            room.onPeerLeave((peerId) => {
-                console.log('Mobile Controller P2P Peer Left:', peerId);
-                if (callbacks.onClientDisconnected) callbacks.onClientDisconnected();
-            });
-
-            if (callbacks.onServerReady) {
+            if (callbacks && callbacks.onServerReady) {
                 callbacks.onServerReady(roomId);
             }
         } catch (err) {
             console.error('Failed to create serverless WebRTC room:', err);
-            if (callbacks.onError) callbacks.onError(err);
+            if (callbacks && callbacks.onError) callbacks.onError(err);
         }
 
         return roomId;
@@ -106,7 +180,7 @@
         isHost = false;
         roomId = targetRoom;
 
-        if (callbacks.onStatus) {
+        if (callbacks && callbacks.onStatus) {
             callbacks.onStatus(`Connecting to room ${targetRoom}...`);
         }
 
@@ -116,30 +190,29 @@
             const { joinRoom } = await getTrystero();
             room = joinRoom({ appId: 'quantumplay-arcade' }, targetRoom);
 
-            const [sendConfig, getConfig] = room.makeAction('CONFIG');
-            const [sendInput, getInput] = room.makeAction('INPUT');
-
-            sendConfigFn = sendConfig;
-            sendInputFn = sendInput;
-
-            getConfig((data, peerId) => {
+            // Bind actions
+            sendConfigFn = bindAction(room, 'CONFIG', (data) => {
                 if (data && window.QuantumController) {
                     window.QuantumController.applyControlConfig(data);
                 }
             });
+            sendInputFn = bindAction(room, 'INPUT', () => {});
 
-            room.onPeerJoin((peerId) => {
-                console.log('Connected to Host Peer:', peerId);
-                if (callbacks.onConnected) callbacks.onConnected();
-            });
-
-            room.onPeerLeave((peerId) => {
-                console.log('Host Peer Left:', peerId);
-                if (callbacks.onDisconnected) callbacks.onDisconnected();
-            });
+            // Bind peer connectivity
+            bindPeerEvents(
+                room,
+                (peerId) => {
+                    console.log('Connected to Host Peer:', peerId);
+                    if (callbacks && callbacks.onConnected) callbacks.onConnected();
+                },
+                (peerId) => {
+                    console.log('Host Peer Left:', peerId);
+                    if (callbacks && callbacks.onDisconnected) callbacks.onDisconnected();
+                }
+            );
         } catch (err) {
             console.error('Failed to join WebRTC room:', err);
-            if (callbacks.onError) callbacks.onError(err);
+            if (callbacks && callbacks.onError) callbacks.onError(err);
         }
     }
 
