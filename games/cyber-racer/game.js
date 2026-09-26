@@ -6,7 +6,7 @@
 (function () {
     let animationFrameId = null;
 
-    function start(canvas, ctx, getInput) {
+    function start(canvas, ctx, getInput, onGameOver) {
         const ROAD_LEFT = 350;
         const ROAD_RIGHT = 850;
         const ROAD_WIDTH = ROAD_RIGHT - ROAD_LEFT;
@@ -299,19 +299,23 @@
             ctx.fillText(`${score}`, 910, 130);
 
             if (isGameOver) {
-                ctx.fillStyle = 'rgba(9, 5, 20, 0.88)';
+                ctx.fillStyle = 'rgba(9, 5, 20, 0.75)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#f43f5e';
-                ctx.font = '800 48px Outfit, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('CRASHED!', canvas.width / 2, canvas.height / 2 - 20);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '24px sans-serif';
-                ctx.fillText(`Final Distance Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                if (typeof onGameOver === 'function') {
+                    onGameOver({
+                        title: 'CRASHED!',
+                        score: `Final Distance: ${score}m`,
+                        icon: '🚗'
+                    });
+                }
+                return;
             }
 
             animationFrameId = requestAnimationFrame(loop);
         }
+
 
         loop();
     }

@@ -104,10 +104,10 @@
             </div>
         </div>
 
-        <!-- Widescreen Canvas Game Container -->
-        <div class="flex-1 relative flex items-center justify-center p-4 bg-slate-950 overflow-hidden">
-            <div id="canvas-wrapper" class="relative max-w-6xl w-full aspect-[16/9] max-h-[85vh] flex items-center justify-center rounded-2xl shadow-2xl border border-purple-500/30 overflow-hidden bg-slate-900">
-                <canvas id="gameCanvas" class="w-full h-full object-contain block bg-slate-900"></canvas>
+        <!-- Dynamic Canvas Game Container — fills all available space -->
+        <div class="flex-1 relative flex items-center justify-center p-2 bg-slate-950 overflow-hidden min-h-0">
+            <div id="canvas-wrapper" class="relative w-full h-full flex items-center justify-center rounded-xl shadow-2xl border border-purple-500/30 overflow-hidden bg-slate-900">
+                <canvas id="gameCanvas" class="block bg-slate-900 max-w-full max-h-full"></canvas>
 
                 <!-- QR Pairing Overlay (Appears until phone connects) -->
                 <div id="qr-modal" class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center z-10">
@@ -127,8 +127,26 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Game Over / Restart Overlay -->
+                <div id="game-over-overlay" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center z-20 text-center p-6">
+                    <div class="glass-card p-10 rounded-3xl max-w-sm w-full border border-rose-500/30 shadow-2xl flex flex-col items-center gap-4">
+                        <div class="text-rose-400 text-6xl mb-2" id="game-over-icon">💥</div>
+                        <h2 id="game-over-title" class="text-3xl font-extrabold text-white tracking-tight">Game Over</h2>
+                        <p id="game-over-score" class="text-gray-400 text-base"></p>
+                        <button onclick="QuantumApp.restartGame()" class="mt-4 w-full py-3 px-6 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all text-lg">
+                            <i class="fa-solid fa-rotate-right"></i>
+                            <span>Play Again</span>
+                        </button>
+                        <button onclick="QuantumApp.closeGame()" class="w-full py-2 px-6 bg-gray-800 hover:bg-gray-700 active:scale-95 text-gray-300 font-semibold rounded-xl transition-all text-sm">
+                            <i class="fa-solid fa-house mr-2"></i>Back to Games
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
+
     </div>
 
     <!-- ========================================== -->
@@ -191,9 +209,9 @@
     </div>
 
     <!-- Application Script Modules -->
-    <script src="js/webrtc.js?v=2.3"></script>
-    <script src="js/controller.js?v=2.3"></script>
-    <script src="js/game-loader.js?v=2.3"></script>
-    <script src="js/app.js?v=2.3"></script>
+    <script src="js/webrtc.js?v=2.4"></script>
+    <script src="js/controller.js?v=2.4"></script>
+    <script src="js/game-loader.js?v=2.4"></script>
+    <script src="js/app.js?v=2.4"></script>
 </body>
 </html>

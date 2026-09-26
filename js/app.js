@@ -10,6 +10,8 @@ window.QuantumApp = (function () {
     let hostPeerStatus, gameControllerStatus, qrModal;
     let displayRoomId, currentGameTitle, canvas, ctx;
     let ctrlStatusDot, ctrlStatusText, ctrlGamepadInterface;
+    let gameOverOverlay, gameOverTitle, gameOverScore, gameOverIcon;
+
 
     function init() {
         dashboardView = document.getElementById('dashboard-view');
@@ -26,6 +28,12 @@ window.QuantumApp = (function () {
         ctrlStatusDot = document.getElementById('ctrl-status-dot');
         ctrlStatusText = document.getElementById('ctrl-status-text');
         ctrlGamepadInterface = document.getElementById('ctrl-gamepad-interface');
+
+        gameOverOverlay = document.getElementById('game-over-overlay');
+        gameOverTitle = document.getElementById('game-over-title');
+        gameOverScore = document.getElementById('game-over-score');
+        gameOverIcon = document.getElementById('game-over-icon');
+
 
         // Check URL parameters for smartphone controller mode
         const urlParams = new URLSearchParams(window.location.search);
@@ -170,10 +178,31 @@ window.QuantumApp = (function () {
     }
 
     /**
+     * Show game-over overlay with customisable content
+     */
+    function showGameOver({ title = 'Game Over', score = '', icon = '💥' } = {}) {
+        if (gameOverTitle) gameOverTitle.textContent = title;
+        if (gameOverScore) gameOverScore.textContent = score;
+        if (gameOverIcon) gameOverIcon.textContent = icon;
+        if (gameOverOverlay) {
+            gameOverOverlay.classList.remove('hidden');
+            gameOverOverlay.classList.add('flex');
+        }
+    }
+
+    function hideGameOver() {
+        if (gameOverOverlay) {
+            gameOverOverlay.classList.add('hidden');
+            gameOverOverlay.classList.remove('flex');
+        }
+    }
+
+    /**
      * Launch selected game
      */
     async function launchGame(gameId) {
         activeGameId = gameId;
+        hideGameOver();
         dashboardView.classList.add('hidden');
         gameView.classList.remove('hidden');
 
@@ -194,20 +223,37 @@ window.QuantumApp = (function () {
         };
         window.QuantumWebRTC.sendControlConfig(controlConfig);
 
-        // Set Widescreen 16:9 Laptop Canvas Dimensions
-        canvas.width = 1200;
-        canvas.height = 675;
+        // Dynamic canvas: fill the wrapper element exactly
+        const wrapper = document.getElementById('canvas-wrapper');
+        if (wrapper) {
+            // Give the DOM a frame to layout before measuring
+            await new Promise(r => requestAnimationFrame(r));
+            canvas.width = wrapper.clientWidth;
+            canvas.height = wrapper.clientHeight;
+        }
 
-        // Launch game instance
+        // Launch game instance — pass onGameOver so games can trigger the overlay
         try {
             await window.QuantumGameLoader.launchGame(
                 gameId,
                 canvas,
                 ctx,
-                () => window.QuantumWebRTC.getInput()
+                () => window.QuantumWebRTC.getInput(),
+                (result) => showGameOver(result)
             );
         } catch (err) {
             console.error(`Failed to launch game ${gameId}:`, err);
+        }
+    }
+
+    /**
+     * Restart the currently active game
+     */
+    function restartGame() {
+        if (activeGameId) {
+            window.QuantumGameLoader.stopGame(activeGameId);
+            hideGameOver();
+            launchGame(activeGameId);
         }
     }
 
@@ -241,6 +287,8 @@ window.QuantumApp = (function () {
         launchGame,
         closeGame,
         joinRoomManually,
-        retryHostConnection
+        retryHostConnection,
+        restartGame
     };
+
 })();

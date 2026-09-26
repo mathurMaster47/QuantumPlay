@@ -6,7 +6,7 @@
 (function () {
     let animationFrameId = null;
 
-    function start(canvas, ctx, getInput) {
+    function start(canvas, ctx, getInput, onGameOver) {
         const COLS = 10;
         const ROWS = 20;
         const BLOCK_SIZE = 28;
@@ -390,21 +390,25 @@
             ctx.fillText('• Button [ROTATE]: Flip Block', 850, OFFSET_Y + 320);
             ctx.fillText('• Button [DROP]: Hard Drop', 850, OFFSET_Y + 345);
 
-            // Game Over Overlay
+            // Game Over — trigger overlay
             if (isGameOver) {
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = '#a855f7';
-                ctx.font = '800 48px Outfit, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '24px sans-serif';
-                ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                if (typeof onGameOver === 'function') {
+                    onGameOver({
+                        title: 'Game Over',
+                        score: `Score: ${score}  •  Lines: ${lines}  •  Level: ${level}`,
+                        icon: '🟪'
+                    });
+                }
+                return;
             }
 
             animationFrameId = requestAnimationFrame(loop);
         }
+
 
         loop();
     }

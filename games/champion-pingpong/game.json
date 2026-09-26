@@ -3,7 +3,7 @@
   "title": "Champion Island Table Tennis",
   "description": "Fast-paced anime arcade table tennis inspired by Google's Champion Island Games! Position paddle with joystick & press SMASH to fire power shots!",
   "icon": "fa-solid fa-table-tennis-paddle-ball",
-  "thumbnail": "games/champion-pingpong/thumbnail.svg",
+  "thumbnail": "games/champion-pingpong/thumbnail.png",
   "themeColor": "emerald",
   "script": "games/champion-pingpong/game.js",
   "controls": {

@@ -6,7 +6,7 @@
 (function () {
     let animationFrameId = null;
 
-    function start(canvas, ctx, getInput) {
+    function start(canvas, ctx, getInput, onGameOver) {
         const TABLE_TOP_Y = 130;
         const TABLE_BOTTOM_Y = 560;
         const TABLE_LEFT_TOP = 360;
@@ -316,19 +316,24 @@
             ctx.fillText(`${opponentScore}`, 1025, 150);
 
             if (isGameOver) {
-                ctx.fillStyle = 'rgba(4, 47, 46, 0.9)';
+                const playerWon = playerScore >= 10;
+                ctx.fillStyle = 'rgba(4, 47, 46, 0.75)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = playerScore >= 10 ? '#34d399' : '#f43f5e';
-                ctx.font = '800 48px Outfit, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(playerScore >= 10 ? 'YOU WIN!' : 'KAPPA WINS!', canvas.width / 2, canvas.height / 2 - 20);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '24px sans-serif';
-                ctx.fillText(`Final Match Score: ${playerScore} - ${opponentScore}`, canvas.width / 2, canvas.height / 2 + 30);
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                if (typeof onGameOver === 'function') {
+                    onGameOver({
+                        title: playerWon ? 'YOU WIN! 🏆' : 'KAPPA WINS!',
+                        score: `Match: ${playerScore} — ${opponentScore}`,
+                        icon: playerWon ? '🏓' : '🤖'
+                    });
+                }
+                return;
             }
 
             animationFrameId = requestAnimationFrame(loop);
         }
+
 
         loop();
     }

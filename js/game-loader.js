@@ -16,7 +16,7 @@ window.QuantumGameLoader = (function () {
             title: 'Sukuna - Magical Physics Puzzle',
             description: 'Drop celestial items into the container. Merge identical items to evolve into higher tier celestial spheres!',
             icon: 'fa-solid fa-gem',
-            thumbnail: 'games/sukuna-game/thumbnail.svg',
+            thumbnail: 'games/sukuna-game/thumbnail.png',
             themeColor: 'purple',
             script: 'games/sukuna-game/game.js',
             controls: {
@@ -26,6 +26,7 @@ window.QuantumGameLoader = (function () {
                 ]
             }
         }
+
     ];
 
     /**
@@ -124,7 +125,7 @@ window.QuantumGameLoader = (function () {
     /**
      * Dynamically load game script and start game
      */
-    async function launchGame(gameId, canvas, ctx, getInput) {
+    async function launchGame(gameId, canvas, ctx, getInput, onGameOver) {
         const gameMeta = gameRegistry.get(gameId);
         if (!gameMeta) {
             console.error(`Game '${gameId}' not found in registry.`);
@@ -143,9 +144,10 @@ window.QuantumGameLoader = (function () {
             throw new Error(`Game module window.QuantumGames['${gameId}'] is invalid or missing start() method.`);
         }
 
-        gameObject.start(canvas, ctx, getInput);
+        gameObject.start(canvas, ctx, getInput, onGameOver);
         return gameObject;
     }
+
 
     function loadScript(src) {
         return new Promise((resolve, reject) => {

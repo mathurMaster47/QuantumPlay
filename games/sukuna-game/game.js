@@ -128,7 +128,7 @@
         }
     }
 
-    function start(canvas, ctx, getInput) {
+    function start(canvas, ctx, getInput, onGameOver) {
         initAudioContext();
         if (typeof Matter === 'undefined') {
             console.error('Matter.js is required for Sukuna Game.');
@@ -446,22 +446,27 @@
                 ctx.fillText(`+${item.score} Points`, 940, yPos + 54);
             });
 
-            // Game Over Overlay
+            // Game Over — trigger overlay, stop loop
             if (isGameOver) {
-                ctx.fillStyle = 'rgba(18, 3, 23, 0.88)';
+                ctx.fillStyle = 'rgba(18, 3, 23, 0.75)';
                 ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-                ctx.fillStyle = '#ff33aa';
-                ctx.font = '800 48px Outfit, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '24px sans-serif';
-                ctx.fillText(`Final Score: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
+                ctx.restore();
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+                if (typeof onGameOver === 'function') {
+                    onGameOver({
+                        title: 'Game Over',
+                        score: `Final Score: ${score}`,
+                        icon: '💫'
+                    });
+                }
+                return;
             }
 
             ctx.restore();
             animationFrameId = requestAnimationFrame(loop);
         }
+
 
         loop();
     }
