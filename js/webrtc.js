@@ -1,18 +1,18 @@
 /**
- * QuantumPlay - WebRTC & PeerJS Controller Connection Manager
+ * QuantumPlay - Serverless WebRTC Controller Connection Manager
+ * Powered by Trystero Multi-Tracker P2P Engine
  */
 
+import { joinRoom } from 'https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm';
+
 window.QuantumWebRTC = (function () {
-    let peer = null;
-    let hostConn = null;
+    let room = null;
     let roomId = null;
     let activeControlConfig = null;
+    let isHost = false;
 
-    let hasBeenOpened = false;
-    let isReconnecting = false;
-    let reconnectTimer = null;
-    let hostAttempts = 0;
-    const MAX_ATTEMPTS = 4;
+    let sendInputFn = null;
+    let sendConfigFn = null;
 
     const controllerInput = {
         x: 0,
@@ -25,238 +25,139 @@ window.QuantumWebRTC = (function () {
         btnB: false
     };
 
-    const peerOptions = {
-        host: '0.peerjs.com',
-        port: 443,
-        path: '/',
-        secure: true,
-        pingInterval: 5000,
-        config: {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun.cloudflare.com:3478' }
-            ]
-        },
-        debug: 1
-    };
-
-    /**
-     * Initialize Host Mode (Desktop/Laptop)
-     */
-    function initHostMode(callbacks) {
-        if (peer) {
-            try { peer.destroy(); } catch (e) {}
-            peer = null;
-        }
-
-        hasBeenOpened = false;
-        isReconnecting = false;
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-
-        try {
-            peer = new Peer(peerOptions);
-        } catch (err) {
-            console.error('Failed to instantiate PeerJS:', err);
-            if (callbacks.onError) callbacks.onError(err);
-            return;
-        }
-
-        peer.on('open', (id) => {
-            roomId = id;
-            hasBeenOpened = true;
-            hostAttempts = 0;
-            isReconnecting = false;
-            console.log('Host registered on PeerJS server with ID:', id);
-            if (callbacks.onServerReady) callbacks.onServerReady(id);
-        });
-
-        peer.on('connection', (conn) => {
-            console.log('New mobile controller connected:', conn.peer);
-            hostConn = conn;
-            setupHostListeners(callbacks);
-        });
-
-        peer.on('disconnected', () => {
-            console.warn('Host disconnected from PeerJS signaling server.');
-            // Guard against calling reconnect() if never opened or already reconnecting
-            if (hasBeenOpened && peer && !peer.destroyed && !isReconnecting) {
-                isReconnecting = true;
-                reconnectTimer = setTimeout(() => {
-                    isReconnecting = false;
-                    if (peer && !peer.destroyed && peer.disconnected) {
-                        try {
-                            peer.reconnect();
-                        } catch (e) {
-                            console.warn('Host reconnect attempt failed:', e);
-                        }
-                    }
-                }, 3000);
-            }
-        });
-
-        peer.on('error', (err) => {
-            console.error('PeerJS Host Error:', err);
-
-            // If initial server registration failed before 'open', destroy and recreate
-            if (!hasBeenOpened) {
-                if (hostAttempts < MAX_ATTEMPTS) {
-                    hostAttempts++;
-                    console.log(`Initial host connection failed. Retrying creation in 3s (Attempt ${hostAttempts}/${MAX_ATTEMPTS})...`);
-                    if (reconnectTimer) clearTimeout(reconnectTimer);
-                    reconnectTimer = setTimeout(() => {
-                        initHostMode(callbacks);
-                    }, 3000);
-                } else if (callbacks.onError) {
-                    callbacks.onError(err);
-                }
-            } else if (callbacks.onError) {
-                callbacks.onError(err);
-            }
-        });
-
-        return roomId;
+    function generateRoomId() {
+        return 'qp-' + Math.random().toString(36).substring(2, 8);
     }
 
-    function setupHostListeners(callbacks) {
-        hostConn.on('open', () => {
-            if (activeControlConfig) {
-                sendControlConfig(activeControlConfig);
+    /**
+     * Initialize Host Mode (Desktop / Laptop)
+     */
+    function initHostMode(callbacks) {
+        if (room) {
+            try { room.leave(); } catch (e) {}
+            room = null;
+        }
+
+        isHost = true;
+        roomId = generateRoomId();
+
+        console.log('Initializing Serverless P2P Host Room:', roomId);
+
+        try {
+            room = joinRoom({ appId: 'quantumplay-arcade' }, roomId);
+        } catch (err) {
+            console.error('Failed to create serverless WebRTC room:', err);
+            if (callbacks.onError) callbacks.onError(err);
+            return roomId;
+        }
+
+        const [sendConfig, getConfig] = room.makeAction('CONFIG');
+        const [sendInput, getInput] = room.makeAction('INPUT');
+
+        sendConfigFn = sendConfig;
+        sendInputFn = sendInput;
+
+        getInput((data, peerId) => {
+            if (data) {
+                Object.assign(controllerInput, data);
+            }
+        });
+
+        room.onPeerJoin((peerId) => {
+            console.log('Mobile Controller P2P Peer Joined:', peerId);
+            if (activeControlConfig && sendConfigFn) {
+                try { sendConfigFn(activeControlConfig); } catch (e) {}
             }
             if (callbacks.onClientConnected) callbacks.onClientConnected();
         });
 
-        hostConn.on('data', (data) => {
-            if (data && data.type === 'INPUT') {
-                Object.assign(controllerInput, data.payload);
-            }
-        });
-
-        hostConn.on('close', () => {
+        room.onPeerLeave((peerId) => {
+            console.log('Mobile Controller P2P Peer Left:', peerId);
             if (callbacks.onClientDisconnected) callbacks.onClientDisconnected();
         });
 
-        hostConn.on('error', (err) => {
-            console.error('Host connection error:', err);
-            if (callbacks.onClientDisconnected) callbacks.onClientDisconnected();
-        });
-    }
-
-    /**
-     * Send game control rules from Host to Mobile Controller
-     */
-    function sendControlConfig(config) {
-        activeControlConfig = config;
-        if (hostConn && hostConn.open) {
-            hostConn.send({
-                type: 'CONFIG',
-                payload: config
-            });
+        if (callbacks.onServerReady) {
+            callbacks.onServerReady(roomId);
         }
+
+        return roomId;
     }
 
     /**
-     * Initialize Controller Mode (Smartphone) with Automatic Retry Logic
+     * Initialize Controller Mode (Smartphone)
      */
-    function initControllerMode(targetRoom, callbacks, attempt = 1) {
+    function initControllerMode(targetRoom, callbacks) {
         if (!targetRoom) return;
+
+        if (room) {
+            try { room.leave(); } catch (e) {}
+            room = null;
+        }
+
+        isHost = false;
+        roomId = targetRoom;
 
         if (callbacks.onStatus) {
             callbacks.onStatus(`Connecting to room ${targetRoom}...`);
         }
 
-        if (peer) {
-            try { peer.destroy(); } catch (e) {}
-            peer = null;
-        }
-
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-
-        let ctrlOpened = false;
+        console.log('Joining Serverless P2P Room:', targetRoom);
 
         try {
-            peer = new Peer(peerOptions);
+            room = joinRoom({ appId: 'quantumplay-arcade' }, targetRoom);
         } catch (err) {
-            console.error('Failed to create PeerJS for controller:', err);
+            console.error('Failed to join WebRTC room:', err);
             if (callbacks.onError) callbacks.onError(err);
             return;
         }
 
-        peer.on('open', () => {
-            ctrlOpened = true;
-            try {
-                hostConn = peer.connect(targetRoom, { reliable: true });
-            } catch (e) {
-                console.error('Peer connect error:', e);
-            }
+        const [sendConfig, getConfig] = room.makeAction('CONFIG');
+        const [sendInput, getInput] = room.makeAction('INPUT');
 
-            if (!hostConn) return;
+        sendConfigFn = sendConfig;
+        sendInputFn = sendInput;
 
-            hostConn.on('open', () => {
-                if (callbacks.onConnected) callbacks.onConnected();
-            });
-
-            hostConn.on('data', (data) => {
-                if (data && data.type === 'CONFIG') {
-                    if (window.QuantumController) {
-                        window.QuantumController.applyControlConfig(data.payload);
-                    }
-                }
-            });
-
-            hostConn.on('close', () => {
-                if (callbacks.onDisconnected) callbacks.onDisconnected();
-            });
-
-            hostConn.on('error', (err) => {
-                console.warn('Controller connection error:', err);
-                if (attempt < MAX_ATTEMPTS) {
-                    if (callbacks.onStatus) callbacks.onStatus(`Retrying connection (${attempt}/${MAX_ATTEMPTS-1})...`);
-                    reconnectTimer = setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 2500);
-                } else if (callbacks.onError) {
-                    callbacks.onError(err);
-                }
-            });
-        });
-
-        peer.on('disconnected', () => {
-            console.warn('Controller disconnected from signaling server.');
-            if (ctrlOpened && peer && !peer.destroyed && !isReconnecting) {
-                isReconnecting = true;
-                reconnectTimer = setTimeout(() => {
-                    isReconnecting = false;
-                    if (peer && !peer.destroyed && peer.disconnected) {
-                        try { peer.reconnect(); } catch (e) {}
-                    }
-                }, 3000);
+        getConfig((data, peerId) => {
+            if (data && window.QuantumController) {
+                window.QuantumController.applyControlConfig(data);
             }
         });
 
-        peer.on('error', (err) => {
-            console.error(`PeerJS Controller Error (Attempt ${attempt}):`, err);
+        room.onPeerJoin((peerId) => {
+            console.log('Connected to Host Peer:', peerId);
+            if (callbacks.onConnected) callbacks.onConnected();
+        });
 
-            if (!ctrlOpened) {
-                if (attempt < MAX_ATTEMPTS) {
-                    if (callbacks.onStatus) callbacks.onStatus(`Retrying (${attempt}/${MAX_ATTEMPTS-1})...`);
-                    reconnectTimer = setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 2500);
-                } else if (callbacks.onError) {
-                    callbacks.onError(err);
-                }
-            } else if (callbacks.onError) {
-                callbacks.onError(err);
-            }
+        room.onPeerLeave((peerId) => {
+            console.log('Host Peer Left:', peerId);
+            if (callbacks.onDisconnected) callbacks.onDisconnected();
         });
     }
 
     /**
-     * Transmit gamepad input state from phone to host
+     * Broadcast control rules from Host to Mobile Controller
+     */
+    function sendControlConfig(config) {
+        activeControlConfig = config;
+        if (sendConfigFn) {
+            try {
+                sendConfigFn(config);
+            } catch (e) {
+                console.warn('Failed to broadcast control config:', e);
+            }
+        }
+    }
+
+    /**
+     * Transmit gamepad input state from Mobile Controller to Host
      */
     function sendInputState() {
-        if (hostConn && hostConn.open) {
-            hostConn.send({
-                type: 'INPUT',
-                payload: controllerInput
-            });
+        if (sendInputFn && !isHost) {
+            try {
+                sendInputFn(controllerInput);
+            } catch (e) {
+                console.warn('Failed to send input state:', e);
+            }
         }
     }
 
