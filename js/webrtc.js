@@ -8,6 +8,12 @@ window.QuantumWebRTC = (function () {
     let roomId = null;
     let activeControlConfig = null;
 
+    let hasBeenOpened = false;
+    let isReconnecting = false;
+    let reconnectTimer = null;
+    let hostAttempts = 0;
+    const MAX_ATTEMPTS = 4;
+
     const controllerInput = {
         x: 0,
         y: 0,
@@ -20,13 +26,16 @@ window.QuantumWebRTC = (function () {
     };
 
     const peerOptions = {
+        host: '0.peerjs.com',
+        port: 443,
+        path: '/',
+        secure: true,
+        pingInterval: 5000,
         config: {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' }
+                { urls: 'stun:stun.cloudflare.com:3478' }
             ]
         },
         debug: 1
@@ -36,36 +45,70 @@ window.QuantumWebRTC = (function () {
      * Initialize Host Mode (Desktop/Laptop)
      */
     function initHostMode(callbacks) {
-        if (peer && !peer.destroyed) {
-            peer.destroy();
+        if (peer) {
+            try { peer.destroy(); } catch (e) {}
+            peer = null;
         }
 
-        // Initialize PeerJS letting the server generate & register a clean unique peer ID
-        peer = new Peer(peerOptions);
+        hasBeenOpened = false;
+        isReconnecting = false;
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+
+        try {
+            peer = new Peer(peerOptions);
+        } catch (err) {
+            console.error('Failed to instantiate PeerJS:', err);
+            if (callbacks.onError) callbacks.onError(err);
+            return;
+        }
 
         peer.on('open', (id) => {
             roomId = id;
+            hasBeenOpened = true;
+            hostAttempts = 0;
+            isReconnecting = false;
+            console.log('Host registered on PeerJS server with ID:', id);
             if (callbacks.onServerReady) callbacks.onServerReady(id);
         });
 
         peer.on('connection', (conn) => {
+            console.log('New mobile controller connected:', conn.peer);
             hostConn = conn;
             setupHostListeners(callbacks);
         });
 
         peer.on('disconnected', () => {
-            console.warn('Host disconnected from PeerJS signaling server. Auto-reconnecting...');
-            if (peer && !peer.destroyed) {
-                peer.reconnect();
+            console.warn('Host disconnected from PeerJS signaling server.');
+            // Guard against calling reconnect() if never opened or already reconnecting
+            if (hasBeenOpened && peer && !peer.destroyed && !isReconnecting) {
+                isReconnecting = true;
+                reconnectTimer = setTimeout(() => {
+                    isReconnecting = false;
+                    if (peer && !peer.destroyed && peer.disconnected) {
+                        try {
+                            peer.reconnect();
+                        } catch (e) {
+                            console.warn('Host reconnect attempt failed:', e);
+                        }
+                    }
+                }, 3000);
             }
         });
 
         peer.on('error', (err) => {
             console.error('PeerJS Host Error:', err);
-            // Auto-recover on connection loss
-            if (err.type === 'network' || err.type === 'disconnected' || err.type === 'socket-error') {
-                if (peer && !peer.destroyed) {
-                    setTimeout(() => peer.reconnect(), 1000);
+
+            // If initial server registration failed before 'open', destroy and recreate
+            if (!hasBeenOpened) {
+                if (hostAttempts < MAX_ATTEMPTS) {
+                    hostAttempts++;
+                    console.log(`Initial host connection failed. Retrying creation in 3s (Attempt ${hostAttempts}/${MAX_ATTEMPTS})...`);
+                    if (reconnectTimer) clearTimeout(reconnectTimer);
+                    reconnectTimer = setTimeout(() => {
+                        initHostMode(callbacks);
+                    }, 3000);
+                } else if (callbacks.onError) {
+                    callbacks.onError(err);
                 }
             } else if (callbacks.onError) {
                 callbacks.onError(err);
@@ -122,14 +165,32 @@ window.QuantumWebRTC = (function () {
             callbacks.onStatus(`Connecting to room ${targetRoom}...`);
         }
 
-        if (peer && !peer.destroyed) {
-            peer.destroy();
+        if (peer) {
+            try { peer.destroy(); } catch (e) {}
+            peer = null;
         }
 
-        peer = new Peer(peerOptions);
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+
+        let ctrlOpened = false;
+
+        try {
+            peer = new Peer(peerOptions);
+        } catch (err) {
+            console.error('Failed to create PeerJS for controller:', err);
+            if (callbacks.onError) callbacks.onError(err);
+            return;
+        }
 
         peer.on('open', () => {
-            hostConn = peer.connect(targetRoom, { reliable: true });
+            ctrlOpened = true;
+            try {
+                hostConn = peer.connect(targetRoom, { reliable: true });
+            } catch (e) {
+                console.error('Peer connect error:', e);
+            }
+
+            if (!hostConn) return;
 
             hostConn.on('open', () => {
                 if (callbacks.onConnected) callbacks.onConnected();
@@ -149,9 +210,9 @@ window.QuantumWebRTC = (function () {
 
             hostConn.on('error', (err) => {
                 console.warn('Controller connection error:', err);
-                if (attempt < 4) {
-                    if (callbacks.onStatus) callbacks.onStatus(`Retrying connection (${attempt}/3)...`);
-                    setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 1500);
+                if (attempt < MAX_ATTEMPTS) {
+                    if (callbacks.onStatus) callbacks.onStatus(`Retrying connection (${attempt}/${MAX_ATTEMPTS-1})...`);
+                    reconnectTimer = setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 2500);
                 } else if (callbacks.onError) {
                     callbacks.onError(err);
                 }
@@ -159,17 +220,28 @@ window.QuantumWebRTC = (function () {
         });
 
         peer.on('disconnected', () => {
-            if (peer && !peer.destroyed) {
-                peer.reconnect();
+            console.warn('Controller disconnected from signaling server.');
+            if (ctrlOpened && peer && !peer.destroyed && !isReconnecting) {
+                isReconnecting = true;
+                reconnectTimer = setTimeout(() => {
+                    isReconnecting = false;
+                    if (peer && !peer.destroyed && peer.disconnected) {
+                        try { peer.reconnect(); } catch (e) {}
+                    }
+                }, 3000);
             }
         });
 
         peer.on('error', (err) => {
             console.error(`PeerJS Controller Error (Attempt ${attempt}):`, err);
 
-            if (attempt < 4) {
-                if (callbacks.onStatus) callbacks.onStatus(`Retrying (${attempt}/3)...`);
-                setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 1500);
+            if (!ctrlOpened) {
+                if (attempt < MAX_ATTEMPTS) {
+                    if (callbacks.onStatus) callbacks.onStatus(`Retrying (${attempt}/${MAX_ATTEMPTS-1})...`);
+                    reconnectTimer = setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 2500);
+                } else if (callbacks.onError) {
+                    callbacks.onError(err);
+                }
             } else if (callbacks.onError) {
                 callbacks.onError(err);
             }

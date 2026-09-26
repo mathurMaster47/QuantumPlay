@@ -129,14 +129,16 @@ window.QuantumApp = (function () {
 
     function updateQRCode(roomId) {
         if (!roomId) return;
+        let controllerUrl;
         let origin = window.location.origin;
+
         if (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.startsWith('file')) {
-            origin = 'https://mathurmaster47.github.io/QuantumPlay';
+            controllerUrl = `https://mathurmaster47.github.io/QuantumPlay/?room=${roomId}`;
+        } else {
+            let path = window.location.pathname;
+            if (!path.endsWith('/')) path += '/';
+            controllerUrl = `${origin}${path}?room=${roomId}`;
         }
-        
-        let path = window.location.pathname;
-        if (!path.endsWith('/')) path += '/';
-        const controllerUrl = `${origin}${path}?room=${roomId}`;
 
         const qrContainer = document.getElementById('qrcode');
         if (qrContainer) {
@@ -152,6 +154,19 @@ window.QuantumApp = (function () {
         }
 
         if (displayRoomId) displayRoomId.textContent = roomId;
+    }
+
+    /**
+     * Retry Host PeerJS initialization on user request
+     */
+    function retryHostConnection() {
+        if (hostPeerStatus) {
+            hostPeerStatus.textContent = 'Connecting...';
+            if (hostPeerStatus.previousElementSibling) {
+                hostPeerStatus.previousElementSibling.className = 'fa-solid fa-spinner fa-spin text-indigo-400 text-xs mr-2';
+            }
+        }
+        initHostMode();
     }
 
     /**
@@ -225,6 +240,7 @@ window.QuantumApp = (function () {
     return {
         launchGame,
         closeGame,
-        joinRoomManually
+        joinRoomManually,
+        retryHostConnection
     };
 })();

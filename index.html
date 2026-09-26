@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>QuantumPlay - Cloud & Wireless Controller Arcade</title>
     <!-- Tailwind CSS CDN for Sleek UI -->
+    <script>
+        // Suppress Tailwind CDN production warning in browser console
+        (function() {
+            const origWarn = console.warn;
+            console.warn = function(...args) {
+                if (args[0] && typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
+                origWarn.apply(console, args);
+            };
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PeerJS for WebRTC Realtime Peer Connection -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -35,7 +45,7 @@
             </div>
             
             <div class="flex items-center space-x-4">
-                <div class="hidden sm:flex items-center bg-gray-900 border border-gray-800 rounded-full px-4 py-1.5 text-sm">
+                <div class="hidden sm:flex items-center bg-gray-900 border border-gray-800 rounded-full px-4 py-1.5 text-sm cursor-pointer hover:border-gray-700 transition" onclick="QuantumApp.retryHostConnection()" title="Click to reconnect">
                     <i class="fa-solid fa-signal text-emerald-400 text-xs mr-2"></i>
                     <span id="host-peer-status" class="text-gray-400">Initializing PeerJS...</span>
                 </div>
