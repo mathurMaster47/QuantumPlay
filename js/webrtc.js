@@ -233,9 +233,17 @@
     }
 
     function sendControlConfig(config) {
+        console.log('WebRTC sending control config:', config);
         activeControlConfig = config;
         if (sendConfigFn) {
-            try { sendConfigFn(config); } catch (e) {}
+            try { 
+                sendConfigFn(config); 
+                console.log('Control config sent successfully');
+            } catch (e) {
+                console.error('Failed to send control config:', e);
+            }
+        } else {
+            console.warn('sendConfigFn not available');
         }
     }
 

@@ -74,15 +74,18 @@ window.QuantumApp = (function () {
                 }
                 // Set up start game request handler
                 window.QuantumWebRTC.setOnStartGameRequest(() => {
+                    console.log('Start game request received from controller');
                     startGame();
                 });
                 // Send start game command to controller
-                window.QuantumWebRTC.sendControlConfig({
+                const startConfig = {
                     showStartButton: true,
                     enableInterface: true,
                     joystickAxis: '2d',
                     buttons: [{ id: 'btnStart', label: 'START', color: 'emerald' }]
-                });
+                };
+                console.log('Sending START button config to controller:', startConfig);
+                window.QuantumWebRTC.sendControlConfig(startConfig);
             },
             onClientDisconnected: () => {
                 if (qrModal) qrModal.classList.remove('hidden');
@@ -291,11 +294,14 @@ window.QuantumApp = (function () {
                     gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected - Press Start</span>';
                 }
                 // Send start game command to controller
-                window.QuantumWebRTC.sendControlConfig({
+                const startConfig = {
                     showStartButton: true,
+                    enableInterface: true,
                     joystickAxis: '2d',
                     buttons: [{ id: 'btnStart', label: 'START', color: 'emerald' }]
-                });
+                };
+                console.log('Sending START button config on game launch:', startConfig);
+                window.QuantumWebRTC.sendControlConfig(startConfig);
             }
         } else if (displayRoomId) {
             displayRoomId.textContent = 'Connecting to server...';
@@ -329,6 +335,7 @@ window.QuantumApp = (function () {
      * Actually start the game (called when controller presses start)
      */
     async function startGame() {
+        console.log('startGame() called, activeGameId:', activeGameId, 'gameStarted:', gameStarted);
         if (!activeGameId || gameStarted) return;
         
         gameStarted = true;
@@ -340,6 +347,7 @@ window.QuantumApp = (function () {
             joystickAxis: '2d',
             buttons: [{ id: 'btnA', label: 'A', color: 'indigo' }, { id: 'btnB', label: 'B', color: 'rose' }]
         };
+        console.log('Sending game control config:', controlConfig);
         window.QuantumWebRTC.sendControlConfig(controlConfig);
 
         // Update status to show game is running
