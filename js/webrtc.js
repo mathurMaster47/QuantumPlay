@@ -3,9 +3,8 @@
  * Powered by Trystero Multi-Tracker P2P Engine
  */
 
-import { joinRoom } from 'https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm';
-
-window.QuantumWebRTC = (function () {
+(function () {
+    let trysteroModule = null;
     let room = null;
     let roomId = null;
     let activeControlConfig = null;
@@ -29,10 +28,22 @@ window.QuantumWebRTC = (function () {
         return 'qp-' + Math.random().toString(36).substring(2, 8);
     }
 
+    async function getTrystero() {
+        if (!trysteroModule) {
+            try {
+                trysteroModule = await import('https://cdn.jsdelivr.net/npm/trystero@0.25.4/+esm');
+            } catch (err) {
+                console.error('Failed to load Trystero WebRTC library:', err);
+                throw err;
+            }
+        }
+        return trysteroModule;
+    }
+
     /**
      * Initialize Host Mode (Desktop / Laptop)
      */
-    function initHostMode(callbacks) {
+    async function initHostMode(callbacks) {
         if (room) {
             try { room.leave(); } catch (e) {}
             room = null;
@@ -44,40 +55,38 @@ window.QuantumWebRTC = (function () {
         console.log('Initializing Serverless P2P Host Room:', roomId);
 
         try {
+            const { joinRoom } = await getTrystero();
             room = joinRoom({ appId: 'quantumplay-arcade' }, roomId);
+
+            const [sendConfig, getConfig] = room.makeAction('CONFIG');
+            const [sendInput, getInput] = room.makeAction('INPUT');
+
+            sendConfigFn = sendConfig;
+            sendInputFn = sendInput;
+
+            getInput((data, peerId) => {
+                if (data) Object.assign(controllerInput, data);
+            });
+
+            room.onPeerJoin((peerId) => {
+                console.log('Mobile Controller P2P Peer Joined:', peerId);
+                if (activeControlConfig && sendConfigFn) {
+                    try { sendConfigFn(activeControlConfig); } catch (e) {}
+                }
+                if (callbacks.onClientConnected) callbacks.onClientConnected();
+            });
+
+            room.onPeerLeave((peerId) => {
+                console.log('Mobile Controller P2P Peer Left:', peerId);
+                if (callbacks.onClientDisconnected) callbacks.onClientDisconnected();
+            });
+
+            if (callbacks.onServerReady) {
+                callbacks.onServerReady(roomId);
+            }
         } catch (err) {
             console.error('Failed to create serverless WebRTC room:', err);
             if (callbacks.onError) callbacks.onError(err);
-            return roomId;
-        }
-
-        const [sendConfig, getConfig] = room.makeAction('CONFIG');
-        const [sendInput, getInput] = room.makeAction('INPUT');
-
-        sendConfigFn = sendConfig;
-        sendInputFn = sendInput;
-
-        getInput((data, peerId) => {
-            if (data) {
-                Object.assign(controllerInput, data);
-            }
-        });
-
-        room.onPeerJoin((peerId) => {
-            console.log('Mobile Controller P2P Peer Joined:', peerId);
-            if (activeControlConfig && sendConfigFn) {
-                try { sendConfigFn(activeControlConfig); } catch (e) {}
-            }
-            if (callbacks.onClientConnected) callbacks.onClientConnected();
-        });
-
-        room.onPeerLeave((peerId) => {
-            console.log('Mobile Controller P2P Peer Left:', peerId);
-            if (callbacks.onClientDisconnected) callbacks.onClientDisconnected();
-        });
-
-        if (callbacks.onServerReady) {
-            callbacks.onServerReady(roomId);
         }
 
         return roomId;
@@ -86,7 +95,7 @@ window.QuantumWebRTC = (function () {
     /**
      * Initialize Controller Mode (Smartphone)
      */
-    function initControllerMode(targetRoom, callbacks) {
+    async function initControllerMode(targetRoom, callbacks) {
         if (!targetRoom) return;
 
         if (room) {
@@ -104,60 +113,46 @@ window.QuantumWebRTC = (function () {
         console.log('Joining Serverless P2P Room:', targetRoom);
 
         try {
+            const { joinRoom } = await getTrystero();
             room = joinRoom({ appId: 'quantumplay-arcade' }, targetRoom);
+
+            const [sendConfig, getConfig] = room.makeAction('CONFIG');
+            const [sendInput, getInput] = room.makeAction('INPUT');
+
+            sendConfigFn = sendConfig;
+            sendInputFn = sendInput;
+
+            getConfig((data, peerId) => {
+                if (data && window.QuantumController) {
+                    window.QuantumController.applyControlConfig(data);
+                }
+            });
+
+            room.onPeerJoin((peerId) => {
+                console.log('Connected to Host Peer:', peerId);
+                if (callbacks.onConnected) callbacks.onConnected();
+            });
+
+            room.onPeerLeave((peerId) => {
+                console.log('Host Peer Left:', peerId);
+                if (callbacks.onDisconnected) callbacks.onDisconnected();
+            });
         } catch (err) {
             console.error('Failed to join WebRTC room:', err);
             if (callbacks.onError) callbacks.onError(err);
-            return;
         }
-
-        const [sendConfig, getConfig] = room.makeAction('CONFIG');
-        const [sendInput, getInput] = room.makeAction('INPUT');
-
-        sendConfigFn = sendConfig;
-        sendInputFn = sendInput;
-
-        getConfig((data, peerId) => {
-            if (data && window.QuantumController) {
-                window.QuantumController.applyControlConfig(data);
-            }
-        });
-
-        room.onPeerJoin((peerId) => {
-            console.log('Connected to Host Peer:', peerId);
-            if (callbacks.onConnected) callbacks.onConnected();
-        });
-
-        room.onPeerLeave((peerId) => {
-            console.log('Host Peer Left:', peerId);
-            if (callbacks.onDisconnected) callbacks.onDisconnected();
-        });
     }
 
-    /**
-     * Broadcast control rules from Host to Mobile Controller
-     */
     function sendControlConfig(config) {
         activeControlConfig = config;
         if (sendConfigFn) {
-            try {
-                sendConfigFn(config);
-            } catch (e) {
-                console.warn('Failed to broadcast control config:', e);
-            }
+            try { sendConfigFn(config); } catch (e) {}
         }
     }
 
-    /**
-     * Transmit gamepad input state from Mobile Controller to Host
-     */
     function sendInputState() {
         if (sendInputFn && !isHost) {
-            try {
-                sendInputFn(controllerInput);
-            } catch (e) {
-                console.warn('Failed to send input state:', e);
-            }
+            try { sendInputFn(controllerInput); } catch (e) {}
         }
     }
 
@@ -169,7 +164,7 @@ window.QuantumWebRTC = (function () {
         return roomId;
     }
 
-    return {
+    window.QuantumWebRTC = {
         initHostMode,
         initControllerMode,
         sendInputState,
