@@ -19,14 +19,33 @@ window.QuantumWebRTC = (function () {
         btnB: false
     };
 
+    const peerOptions = {
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
+            ]
+        }
+    };
+
     /**
      * Initialize Host Mode (Desktop/Laptop)
      */
     function initHostMode(callbacks) {
-        roomId = 'nexus-' + Math.random().toString(36).substring(2, 9);
-        peer = new Peer(roomId);
+        // Let PeerJS generate a unique registered ID or fallback to clean custom ID
+        roomId = 'qp-' + Math.random().toString(36).substring(2, 8);
+        
+        if (peer && !peer.destroyed) {
+            peer.destroy();
+        }
+
+        peer = new Peer(roomId, peerOptions);
 
         peer.on('open', (id) => {
+            roomId = id;
             if (callbacks.onServerReady) callbacks.onServerReady(id);
         });
 
@@ -37,7 +56,20 @@ window.QuantumWebRTC = (function () {
 
         peer.on('error', (err) => {
             console.error('PeerJS Host Error:', err);
-            if (callbacks.onError) callbacks.onError(err);
+            // Fallback: If custom ID failed, let PeerJS auto-assign an ID
+            if (err.type === 'unavailable-id' || err.type === 'invalid-id') {
+                peer = new Peer(peerOptions);
+                peer.on('open', (autoId) => {
+                    roomId = autoId;
+                    if (callbacks.onServerReady) callbacks.onServerReady(autoId);
+                });
+                peer.on('connection', (conn) => {
+                    hostConn = conn;
+                    setupHostListeners(callbacks);
+                });
+            } else if (callbacks.onError) {
+                callbacks.onError(err);
+            }
         });
 
         return roomId;
@@ -45,7 +77,6 @@ window.QuantumWebRTC = (function () {
 
     function setupHostListeners(callbacks) {
         hostConn.on('open', () => {
-            // Send current active game control configuration to newly connected controller
             if (activeControlConfig) {
                 sendControlConfig(activeControlConfig);
             }
@@ -59,6 +90,11 @@ window.QuantumWebRTC = (function () {
         });
 
         hostConn.on('close', () => {
+            if (callbacks.onClientDisconnected) callbacks.onClientDisconnected();
+        });
+
+        hostConn.on('error', (err) => {
+            console.error('Host connection error:', err);
             if (callbacks.onClientDisconnected) callbacks.onClientDisconnected();
         });
     }
@@ -77,13 +113,23 @@ window.QuantumWebRTC = (function () {
     }
 
     /**
-     * Initialize Controller Mode (Smartphone)
+     * Initialize Controller Mode (Smartphone) with Automatic Retry Logic
      */
-    function initControllerMode(targetRoom, callbacks) {
-        peer = new Peer();
+    function initControllerMode(targetRoom, callbacks, attempt = 1) {
+        if (!targetRoom) return;
+
+        if (callbacks.onStatus) {
+            callbacks.onStatus(`Connecting to room ${targetRoom}...`);
+        }
+
+        if (peer && !peer.destroyed) {
+            peer.destroy();
+        }
+
+        peer = new Peer(peerOptions);
 
         peer.on('open', () => {
-            hostConn = peer.connect(targetRoom);
+            hostConn = peer.connect(targetRoom, { reliable: true });
 
             hostConn.on('open', () => {
                 if (callbacks.onConnected) callbacks.onConnected();
@@ -100,11 +146,27 @@ window.QuantumWebRTC = (function () {
             hostConn.on('close', () => {
                 if (callbacks.onDisconnected) callbacks.onDisconnected();
             });
+
+            hostConn.on('error', (err) => {
+                console.warn('Controller hostConn error:', err);
+                if (attempt < 4) {
+                    if (callbacks.onStatus) callbacks.onStatus(`Retrying (${attempt}/3)...`);
+                    setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 1500);
+                } else if (callbacks.onError) {
+                    callbacks.onError(err);
+                }
+            });
         });
 
         peer.on('error', (err) => {
-            console.error('PeerJS Controller Error:', err);
-            if (callbacks.onError) callbacks.onError(err);
+            console.error(`PeerJS Controller Error (Attempt ${attempt}):`, err);
+
+            if (attempt < 4) {
+                if (callbacks.onStatus) callbacks.onStatus(`Retrying (${attempt}/3)...`);
+                setTimeout(() => initControllerMode(targetRoom, callbacks, attempt + 1), 1500);
+            } else if (callbacks.onError) {
+                callbacks.onError(err);
+            }
         });
     }
 

@@ -48,12 +48,13 @@ window.QuantumApp = (function () {
         window.QuantumGameLoader.loadLibrary('game-grid');
 
         // Initialize PeerJS Host Server
-        const roomId = window.QuantumWebRTC.initHostMode({
-            onServerReady: () => {
+        window.QuantumWebRTC.initHostMode({
+            onServerReady: (id) => {
                 if (hostPeerStatus) {
                     hostPeerStatus.textContent = 'Server Ready';
                     hostPeerStatus.previousElementSibling.className = 'fa-solid fa-signal text-emerald-400 text-xs mr-2';
                 }
+                if (displayRoomId) displayRoomId.textContent = id;
             },
             onClientConnected: () => {
                 if (qrModal) qrModal.classList.add('hidden');
@@ -91,6 +92,9 @@ window.QuantumApp = (function () {
         window.QuantumController.initControllerUI();
 
         window.QuantumWebRTC.initControllerMode(targetRoom, {
+            onStatus: (statusMsg) => {
+                if (ctrlStatusText) ctrlStatusText.textContent = statusMsg.toUpperCase();
+            },
             onConnected: () => {
                 if (ctrlStatusDot) ctrlStatusDot.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
                 if (ctrlStatusText) {
@@ -98,6 +102,9 @@ window.QuantumApp = (function () {
                     ctrlStatusText.className = 'text-xs font-semibold text-emerald-400 uppercase tracking-wider';
                 }
                 if (ctrlGamepadInterface) ctrlGamepadInterface.classList.remove('opacity-40', 'pointer-events-none');
+                
+                const manualBox = document.getElementById('manual-room-box');
+                if (manualBox) manualBox.classList.add('hidden');
             },
             onDisconnected: () => {
                 if (ctrlStatusDot) ctrlStatusDot.className = 'w-3 h-3 rounded-full bg-red-500';
@@ -108,7 +115,13 @@ window.QuantumApp = (function () {
                 if (ctrlGamepadInterface) ctrlGamepadInterface.classList.add('opacity-40', 'pointer-events-none');
             },
             onError: (err) => {
-                if (ctrlStatusText) ctrlStatusText.textContent = 'ERROR CONNECTING';
+                if (ctrlStatusDot) ctrlStatusDot.className = 'w-3 h-3 rounded-full bg-rose-500';
+                if (ctrlStatusText) {
+                    ctrlStatusText.textContent = 'ERROR CONNECTING';
+                    ctrlStatusText.className = 'text-xs font-semibold text-rose-500 uppercase tracking-wider';
+                }
+                const manualBox = document.getElementById('manual-room-box');
+                if (manualBox) manualBox.classList.remove('hidden');
             }
         });
     }
@@ -122,7 +135,15 @@ window.QuantumApp = (function () {
         gameView.classList.remove('hidden');
 
         const roomId = window.QuantumWebRTC.getRoomId();
-        const controllerUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+        
+        let origin = window.location.origin;
+        if (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.startsWith('file')) {
+            origin = 'https://mathurmaster47.github.io/QuantumPlay';
+        }
+        
+        let path = window.location.pathname;
+        if (!path.endsWith('/')) path += '/';
+        const controllerUrl = `${origin}${path}?room=${roomId}`;
 
         // Render QR Code
         const qrContainer = document.getElementById('qrcode');
@@ -168,6 +189,17 @@ window.QuantumApp = (function () {
     }
 
     /**
+     * Connect manually using Room Code from mobile phone screen
+     */
+    function joinRoomManually() {
+        const inputEl = document.getElementById('manual-room-input');
+        if (inputEl && inputEl.value.trim()) {
+            const roomCode = inputEl.value.trim();
+            initControllerMode(roomCode);
+        }
+    }
+
+    /**
      * Exit active game and return to dashboard
      */
     function closeGame() {
@@ -184,6 +216,7 @@ window.QuantumApp = (function () {
 
     return {
         launchGame,
-        closeGame
+        closeGame,
+        joinRoomManually
     };
 })();
