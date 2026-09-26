@@ -4,6 +4,7 @@
 
 window.QuantumApp = (function () {
     let activeGameId = null;
+    let gameStarted = false; // Track if game has been started by controller
 
     // DOM References
     let dashboardView, gameView, controllerView;
@@ -68,9 +69,20 @@ window.QuantumApp = (function () {
             onClientConnected: () => {
                 if (qrModal) qrModal.classList.add('hidden');
                 if (gameControllerStatus) {
-                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected</span>';
+                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected - Press Start</span>';
                     gameControllerStatus.className = 'flex items-center space-x-2 text-sm bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20';
                 }
+                // Set up start game request handler
+                window.QuantumWebRTC.setOnStartGameRequest(() => {
+                    startGame();
+                });
+                // Send start game command to controller
+                window.QuantumWebRTC.sendControlConfig({
+                    showStartButton: true,
+                    enableInterface: true,
+                    joystickAxis: '2d',
+                    buttons: [{ id: 'btnStart', label: 'START', color: 'emerald' }]
+                });
             },
             onClientDisconnected: () => {
                 if (qrModal) qrModal.classList.remove('hidden');
@@ -202,8 +214,21 @@ window.QuantumApp = (function () {
             onClientConnected: () => {
                 if (qrModal) qrModal.classList.add('hidden');
                 if (gameControllerStatus) {
-                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected</span>';
+                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected - Press Start</span>';
                     gameControllerStatus.className = 'flex items-center space-x-2 text-sm bg-emerald-400/10 px-3 py-1 rounded-full border border-emerald-400/20';
+                }
+                // Set up start game request handler
+                window.QuantumWebRTC.setOnStartGameRequest(() => {
+                    startGame();
+                });
+                // Send start game command to controller if game is loaded
+                if (activeGameId) {
+                    window.QuantumWebRTC.sendControlConfig({
+                        showStartButton: true,
+                        enableInterface: true,
+                        joystickAxis: '2d',
+                        buttons: [{ id: 'btnStart', label: 'START', color: 'emerald' }]
+                    });
                 }
             },
             onClientDisconnected: () => {
@@ -243,10 +268,11 @@ window.QuantumApp = (function () {
     }
 
     /**
-     * Launch selected game
+     * Launch selected game (setup only, doesn't start gameplay)
      */
     async function launchGame(gameId, isControllerConnected = false) {
         activeGameId = gameId;
+        gameStarted = false; // Reset game started state
         hideGameOver();
         dashboardView.classList.add('hidden');
         gameView.classList.remove('hidden');
@@ -259,8 +285,17 @@ window.QuantumApp = (function () {
                 if (qrModal) qrModal.classList.remove('hidden');
                 updateQRCode(roomId);
             } else {
-                // If controller is connected, ensure QR modal is hidden
+                // If controller is connected, ensure QR modal is hidden and show start button
                 if (qrModal) qrModal.classList.add('hidden');
+                if (gameControllerStatus) {
+                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected - Press Start</span>';
+                }
+                // Send start game command to controller
+                window.QuantumWebRTC.sendControlConfig({
+                    showStartButton: true,
+                    joystickAxis: '2d',
+                    buttons: [{ id: 'btnStart', label: 'START', color: 'emerald' }]
+                });
             }
         } else if (displayRoomId) {
             displayRoomId.textContent = 'Connecting to server...';
@@ -268,13 +303,6 @@ window.QuantumApp = (function () {
 
         const meta = window.QuantumGameLoader.getGameMeta(gameId);
         if (currentGameTitle) currentGameTitle.textContent = meta ? meta.title : gameId;
-
-        // Broadcast active control configuration to mobile controller
-        const controlConfig = (meta && meta.controls) ? meta.controls : {
-            joystickAxis: '2d',
-            buttons: [{ id: 'btnA', label: 'A', color: 'indigo' }, { id: 'btnB', label: 'B', color: 'rose' }]
-        };
-        window.QuantumWebRTC.sendControlConfig(controlConfig);
 
         // Dynamic canvas: fill the wrapper element exactly
         const wrapper = document.getElementById('canvas-wrapper');
@@ -285,17 +313,51 @@ window.QuantumApp = (function () {
             canvas.height = wrapper.clientHeight;
         }
 
+        // Don't start game immediately - wait for controller start button
+        // Show waiting message on canvas
+        if (ctx) {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px Outfit, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Connect controller and press START', canvas.width / 2, canvas.height / 2);
+        }
+    }
+
+    /**
+     * Actually start the game (called when controller presses start)
+     */
+    async function startGame() {
+        if (!activeGameId || gameStarted) return;
+        
+        gameStarted = true;
+        
+        const meta = window.QuantumGameLoader.getGameMeta(activeGameId);
+        
+        // Broadcast active control configuration to mobile controller
+        const controlConfig = (meta && meta.controls) ? meta.controls : {
+            joystickAxis: '2d',
+            buttons: [{ id: 'btnA', label: 'A', color: 'indigo' }, { id: 'btnB', label: 'B', color: 'rose' }]
+        };
+        window.QuantumWebRTC.sendControlConfig(controlConfig);
+
+        // Update status to show game is running
+        if (gameControllerStatus) {
+            gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Game Running</span>';
+        }
+
         // Launch game instance — pass onGameOver so games can trigger the overlay
         try {
             await window.QuantumGameLoader.launchGame(
-                gameId,
+                activeGameId,
                 canvas,
                 ctx,
                 () => window.QuantumWebRTC.getInput(),
                 (result) => showGameOver(result)
             );
         } catch (err) {
-            console.error(`Failed to launch game ${gameId}:`, err);
+            console.error(`Failed to start game ${activeGameId}:`, err);
             // Show error to user
             if (currentGameTitle) {
                 currentGameTitle.textContent = 'Game Error - Try Again';
@@ -311,18 +373,42 @@ window.QuantumApp = (function () {
             window.QuantumGameLoader.stopGame(activeGameId);
             hideGameOver();
             
-            // Check if controller is already connected to avoid reshown QR modal
+            // Check if controller is already connected
             const isControllerConnected = gameControllerStatus && 
-                gameControllerStatus.innerHTML.includes('Phone Connected');
+                (gameControllerStatus.innerHTML.includes('Phone Connected') || 
+                 gameControllerStatus.innerHTML.includes('Game Running'));
             
             // Always ensure QR modal is properly handled during restart
             if (isControllerConnected) {
                 if (qrModal) qrModal.classList.add('hidden');
+                // Show start button on controller for restart
+                if (gameControllerStatus) {
+                    gameControllerStatus.innerHTML = '<i class="fa-solid fa-gamepad text-emerald-400"></i><span class="text-emerald-400">Phone Connected - Press Start</span>';
+                }
+                // Ensure start game request handler is set up
+                window.QuantumWebRTC.setOnStartGameRequest(() => {
+                    startGame();
+                });
+                window.QuantumWebRTC.sendControlConfig({
+                    showStartButton: true,
+                    enableInterface: true,
+                    joystickAxis: '2d',
+                    buttons: [{ id: 'btnStart', label: 'START', color: 'emerald' }]
+                });
             } else {
                 if (qrModal) qrModal.classList.remove('hidden');
             }
             
-            launchGame(activeGameId, isControllerConnected);
+            // Reset game started state and setup canvas
+            gameStarted = false;
+            if (ctx) {
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 24px Outfit, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Press START on controller to restart', canvas.width / 2, canvas.height / 2);
+            }
         }
     }
 
@@ -354,6 +440,7 @@ window.QuantumApp = (function () {
 
     return {
         launchGame,
+        startGame,
         closeGame,
         joinRoomManually,
         retryHostConnection,

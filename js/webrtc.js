@@ -21,8 +21,11 @@
         left: false,
         right: false,
         btnA: false,
-        btnB: false
+        btnB: false,
+        btnStart: false
     };
+
+    let onStartGameRequest = null;
 
     function generateRoomId() {
         return 'qp-' + Math.random().toString(36).substring(2, 8);
@@ -142,6 +145,10 @@
             sendConfigFn = bindAction(room, 'CONFIG', () => {});
             sendInputFn = bindAction(room, 'INPUT', (data) => {
                 if (data) Object.assign(controllerInput, data);
+                // Check for start game request from controller
+                if (data.btnStart && onStartGameRequest) {
+                    onStartGameRequest();
+                }
             });
 
             // Bind peer connectivity
@@ -246,6 +253,10 @@
         return roomId;
     }
 
+    function setOnStartGameRequest(callback) {
+        onStartGameRequest = callback;
+    }
+
     window.QuantumWebRTC = {
         initHostMode,
         initControllerMode,
@@ -253,6 +264,7 @@
         sendControlConfig,
         getInput,
         getRoomId,
+        setOnStartGameRequest,
         controllerInput
     };
 })();

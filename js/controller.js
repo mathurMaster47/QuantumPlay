@@ -25,6 +25,11 @@ window.QuantumController = (function () {
         if (!config) return;
         currentConfig = config;
 
+        // Enable interface if requested
+        if (config.enableInterface && ctrlGamepadInterface) {
+            ctrlGamepadInterface.classList.remove('opacity-40', 'pointer-events-none');
+        }
+
         // 1. Configure Joystick Axis
         const joystickContainer = document.getElementById('joystick-container');
         const axisHint = document.getElementById('joystick-axis-hint');
@@ -49,7 +54,26 @@ window.QuantumController = (function () {
         if (actionArea) {
             actionArea.innerHTML = '';
 
-            if (Array.isArray(config.buttons) && config.buttons.length > 0) {
+            if (config.showStartButton) {
+                // Show special START button for game launch
+                const startButton = document.createElement('button');
+                startButton.className = 'btn-action bg-emerald-600 border-emerald-400 text-white font-extrabold shadow-2xl border-2 text-lg active:scale-90 transition-all';
+                startButton.textContent = 'START';
+                
+                // Add simple click handler for START button
+                startButton.onclick = () => {
+                    // Send start signal through WebRTC
+                    window.QuantumWebRTC.controllerInput.btnStart = true;
+                    window.QuantumWebRTC.sendInputState();
+                    setTimeout(() => {
+                        window.QuantumWebRTC.controllerInput.btnStart = false;
+                        window.QuantumWebRTC.sendInputState();
+                    }, 100);
+                    if (navigator.vibrate) navigator.vibrate(50);
+                };
+                
+                actionArea.appendChild(startButton);
+            } else if (Array.isArray(config.buttons) && config.buttons.length > 0) {
                 config.buttons.forEach(btn => {
                     const buttonEl = document.createElement('button');
                     const colorClass = btn.color === 'purple' ? 'bg-purple-600 border-purple-400' :
