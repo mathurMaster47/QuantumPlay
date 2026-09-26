@@ -12,31 +12,19 @@ window.QuantumGameLoader = (function () {
     // Default fallback registry if fetch() is restricted (e.g., file:// protocol)
     const fallbackGames = [
         {
-            id: 'space-runner',
-            title: 'Space Neo-Runner',
-            description: 'Dodge falling space debris and incoming asteroids using left/right tilt or d-pad on your phone controller.',
-            icon: 'fa-solid fa-rocket',
-            thumbnail: 'games/space-runner/thumbnail.svg',
-            themeColor: 'indigo',
-            script: 'games/space-runner/game.js'
-        },
-        {
-            id: 'cyber-pong',
-            title: 'Cyber Pong 2099',
-            description: 'Retro arcade paddle duel against AI. Slide your phone joystick up and down to deflect high-speed laser balls.',
-            icon: 'fa-solid fa-table-tennis-paddle-ball',
-            thumbnail: 'games/cyber-pong/thumbnail.svg',
-            themeColor: 'emerald',
-            script: 'games/cyber-pong/game.js'
-        },
-        {
-            id: 'laser-defender',
-            title: 'Laser Defender',
-            description: 'Defend your starbase against waves of hostile alien invaders. Move with D-Pad and press A to fire plasma lasers.',
-            icon: 'fa-solid fa-shield-halved',
-            thumbnail: 'games/laser-defender/thumbnail.svg',
+            id: 'sukuna-game',
+            title: 'Sukuna - Magical Physics Puzzle',
+            description: 'Drop celestial items into the container. Merge identical items to evolve into higher tier celestial spheres!',
+            icon: 'fa-solid fa-gem',
+            thumbnail: 'games/sukuna-game/thumbnail.svg',
             themeColor: 'purple',
-            script: 'games/laser-defender/game.js'
+            script: 'games/sukuna-game/game.js',
+            controls: {
+                joystickAxis: 'horizontal',
+                buttons: [
+                    { id: 'btnA', label: 'DROP', color: 'purple' }
+                ]
+            }
         }
     ];
 
@@ -69,7 +57,7 @@ window.QuantumGameLoader = (function () {
                 }
             }
         } catch (err) {
-            console.warn('Could not fetch games/games.json directly (likely file:// protocol). Using fallback library.', err);
+            console.warn('Could not fetch games/games.json directly. Using fallback library.', err);
         }
 
         if (gamesToLoad.length === 0) {
@@ -101,7 +89,7 @@ window.QuantumGameLoader = (function () {
             amber: { bg: 'from-amber-900 via-slate-900 to-yellow-900', btn: 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30', text: 'text-amber-400' }
         };
 
-        const theme = colorClasses[game.themeColor] || colorClasses.indigo;
+        const theme = colorClasses[game.themeColor] || colorClasses.purple;
 
         let thumbnailHtml = '';
         if (game.thumbnail) {

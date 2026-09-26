@@ -6,8 +6,11 @@ window.QuantumWebRTC = (function () {
     let peer = null;
     let hostConn = null;
     let roomId = null;
+    let activeControlConfig = null;
 
     const controllerInput = {
+        x: 0,
+        y: 0,
         up: false,
         down: false,
         left: false,
@@ -42,6 +45,10 @@ window.QuantumWebRTC = (function () {
 
     function setupHostListeners(callbacks) {
         hostConn.on('open', () => {
+            // Send current active game control configuration to newly connected controller
+            if (activeControlConfig) {
+                sendControlConfig(activeControlConfig);
+            }
             if (callbacks.onClientConnected) callbacks.onClientConnected();
         });
 
@@ -57,6 +64,19 @@ window.QuantumWebRTC = (function () {
     }
 
     /**
+     * Send game control rules from Host to Mobile Controller
+     */
+    function sendControlConfig(config) {
+        activeControlConfig = config;
+        if (hostConn && hostConn.open) {
+            hostConn.send({
+                type: 'CONFIG',
+                payload: config
+            });
+        }
+    }
+
+    /**
      * Initialize Controller Mode (Smartphone)
      */
     function initControllerMode(targetRoom, callbacks) {
@@ -67,6 +87,14 @@ window.QuantumWebRTC = (function () {
 
             hostConn.on('open', () => {
                 if (callbacks.onConnected) callbacks.onConnected();
+            });
+
+            hostConn.on('data', (data) => {
+                if (data && data.type === 'CONFIG') {
+                    if (window.QuantumController) {
+                        window.QuantumController.applyControlConfig(data.payload);
+                    }
+                }
             });
 
             hostConn.on('close', () => {
@@ -81,7 +109,7 @@ window.QuantumWebRTC = (function () {
     }
 
     /**
-     * Transmit gamepad button state from phone to host
+     * Transmit gamepad input state from phone to host
      */
     function sendInputState() {
         if (hostConn && hostConn.open) {
@@ -104,6 +132,7 @@ window.QuantumWebRTC = (function () {
         initHostMode,
         initControllerMode,
         sendInputState,
+        sendControlConfig,
         getInput,
         getRoomId,
         controllerInput

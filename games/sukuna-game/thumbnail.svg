@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="sukunaBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#120317"/>
+      <stop offset="50%" stop-color="#25072d"/>
+      <stop offset="100%" stop-color="#3e0c4a"/>
+    </linearGradient>
+    <radialGradient id="purpleGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff33aa"/>
+      <stop offset="100%" stop-color="#3e0c4a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="neonGlow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="240" fill="url(#sukunaBg)"/>
+  <circle cx="200" cy="120" r="140" fill="url(#purpleGlow)" opacity="0.4"/>
+
+  <!-- Celestial Spheres -->
+  <!-- Star Gem (Tier 1) -->
+  <circle cx="120" cy="160" r="18" fill="#ffe066" filter="url(#neonGlow)"/>
+  <text x="120" y="166" font-size="16" text-anchor="middle">⭐</text>
+
+  <!-- Moon Shard (Tier 2) -->
+  <circle cx="270" cy="150" r="24" fill="#80e5ff" filter="url(#neonGlow)"/>
+  <text x="270" y="157" font-size="20" text-anchor="middle">🌙</text>
+
+  <!-- Sun Drop (Tier 3) -->
+  <circle cx="180" cy="170" r="30" fill="#ff8c1a" filter="url(#neonGlow)"/>
+  <text x="180" y="178" font-size="24" text-anchor="middle">☀️</text>
+
+  <!-- Nebula Pearl (Tier 5) -->
+  <circle cx="200" cy="90" r="42" fill="#b366ff" filter="url(#neonGlow)"/>
+  <text x="200" y="99" font-size="36" text-anchor="middle">🔮</text>
+
+  <!-- Dotted Drop Guide Line -->
+  <line x1="200" y1="20" x2="200" y2="48" stroke="#ff33aa" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- Title Text overlay -->
+  <text x="200" y="222" text-anchor="middle" fill="#ff33aa" font-family="'Outfit', 'Segoe UI', sans-serif" font-weight="800" font-size="16" letter-spacing="3">SUKUNA PUZZLE</text>
+</svg>

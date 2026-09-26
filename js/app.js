@@ -88,7 +88,7 @@ window.QuantumApp = (function () {
         controllerView.classList.add('flex');
         document.body.classList.add('no-scroll');
 
-        window.QuantumController.setupTouchListeners();
+        window.QuantumController.initControllerUI();
 
         window.QuantumWebRTC.initControllerMode(targetRoom, {
             onConnected: () => {
@@ -143,9 +143,16 @@ window.QuantumApp = (function () {
         const meta = window.QuantumGameLoader.getGameMeta(gameId);
         if (currentGameTitle) currentGameTitle.textContent = meta ? meta.title : gameId;
 
+        // Broadcast active control configuration to mobile controller
+        const controlConfig = (meta && meta.controls) ? meta.controls : {
+            joystickAxis: '2d',
+            buttons: [{ id: 'btnA', label: 'A', color: 'indigo' }, { id: 'btnB', label: 'B', color: 'rose' }]
+        };
+        window.QuantumWebRTC.sendControlConfig(controlConfig);
+
         // Set Canvas Dimensions
-        canvas.width = 800;
-        canvas.height = 500;
+        canvas.width = 450;
+        canvas.height = 700;
 
         // Launch game instance
         try {

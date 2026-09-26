@@ -1,0 +1,15 @@
+{
+  "id": "sukuna-game",
+  "title": "Sukuna - Magical Physics Puzzle",
+  "description": "Drop celestial items into the container. Merge identical items to evolve into higher tier celestial spheres!",
+  "icon": "fa-solid fa-gem",
+  "thumbnail": "games/sukuna-game/thumbnail.svg",
+  "themeColor": "purple",
+  "script": "games/sukuna-game/game.js",
+  "controls": {
+    "joystickAxis": "horizontal",
+    "buttons": [
+      { "id": "btnA", "label": "DROP", "color": "purple" }
+    ]
+  }
+}

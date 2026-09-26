@@ -10,8 +10,12 @@
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <!-- QRCode.js for QR Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Matter.js Physics Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font (Outfit) -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <!-- Custom Styles -->
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -41,21 +45,21 @@
         <!-- Hero Feature Banner -->
         <header class="relative px-6 py-12 max-w-7xl mx-auto w-full">
             <div class="rounded-3xl overflow-hidden relative glass-card p-8 md:p-12 flex flex-col md:flex-row items-center justify-between border border-gray-800/80">
-                <div class="absolute -right-20 -top-20 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -right-20 -top-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div class="z-10 max-w-xl">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase tracking-widest">Next-Gen Wireless Gaming</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 uppercase tracking-widest">Next-Gen Wireless Gaming</span>
                     <h1 class="text-4xl md:text-5xl font-extrabold text-white mt-4 tracking-tight leading-tight">
                         Your Phone is Your Gamepad.
                     </h1>
                     <p class="text-gray-400 mt-3 text-lg">
-                        Select any game below, scan the pair QR code with your smartphone, and start playing immediately with low-latency WebRTC controls.
+                        Select any game below, scan the pair QR code with your smartphone, and play immediately with custom dynamic joysticks.
                     </p>
                 </div>
                 <div class="z-10 mt-6 md:mt-0 flex items-center space-x-3 text-gray-400 text-sm bg-gray-900/80 px-5 py-3 rounded-2xl border border-gray-800">
-                    <i class="fa-solid fa-mobile-screen-button text-2xl text-indigo-400"></i>
+                    <i class="fa-solid fa-mobile-screen-button text-2xl text-purple-400"></i>
                     <div>
-                        <div class="text-white font-semibold">Modular Game Engine</div>
-                        <div class="text-xs text-gray-500">Drop new games into <code>games/</code> folder</div>
+                        <div class="text-white font-semibold">Dynamic Controller Scheme</div>
+                        <div class="text-xs text-gray-500">Directional Joystick & Dynamic Action Buttons</div>
                     </div>
                 </div>
             </div>
@@ -64,7 +68,7 @@
         <!-- Game Library Grid -->
         <main class="max-w-7xl mx-auto w-full px-6 pb-16 flex-1">
             <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
-                <i class="fa-solid fa-fire text-indigo-500 mr-3"></i> Available Games
+                <i class="fa-solid fa-fire text-purple-500 mr-3"></i> Available Games
             </h2>
 
             <!-- Dynamically Populated by js/game-loader.js -->
@@ -94,23 +98,23 @@
 
         <!-- Canvas Game Container -->
         <div class="flex-1 relative flex items-center justify-center p-4 bg-black overflow-hidden">
-            <canvas id="gameCanvas" class="max-w-full max-h-full rounded-2xl shadow-2xl border border-gray-800 bg-slate-900"></canvas>
+            <canvas id="gameCanvas" class="rounded-2xl shadow-2xl border border-purple-500/30 bg-slate-900 max-h-[85vh] aspect-[450/700]"></canvas>
 
             <!-- QR Pairing Overlay (Appears until phone connects) -->
             <div id="qr-modal" class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center z-10">
-                <div class="glass-card p-8 rounded-3xl max-w-md w-full border border-indigo-500/30 shadow-2xl flex flex-col items-center">
-                    <div class="w-12 h-12 rounded-full bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xl mb-4">
+                <div class="glass-card p-8 rounded-3xl max-w-md w-full border border-purple-500/30 shadow-2xl flex flex-col items-center">
+                    <div class="w-12 h-12 rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xl mb-4">
                         <i class="fa-solid fa-qrcode"></i>
                     </div>
                     <h3 class="text-2xl font-bold text-white">Scan Controller QR Code</h3>
-                    <p class="text-gray-400 text-sm mt-1 mb-6">Open your phone's camera to transform it into a gamepad controller.</p>
+                    <p class="text-gray-400 text-sm mt-1 mb-6">Open your phone's camera to connect your wireless joystick controller.</p>
 
                     <div class="p-4 bg-white rounded-2xl shadow-inner mb-6">
                         <div id="qrcode"></div>
                     </div>
 
                     <div class="text-xs text-gray-500 bg-gray-900/80 px-4 py-2 rounded-xl border border-gray-800 w-full break-all">
-                        Room ID: <span id="display-room-id" class="text-indigo-400 font-mono">Generating...</span>
+                        Room ID: <span id="display-room-id" class="text-purple-400 font-mono">Generating...</span>
                     </div>
                 </div>
             </div>
@@ -127,46 +131,34 @@
                 <span class="w-3 h-3 rounded-full bg-red-500" id="ctrl-status-dot"></span>
                 <span id="ctrl-status-text" class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Connecting...</span>
             </div>
-            <div class="text-xs text-indigo-400 font-bold tracking-widest uppercase">P1 Gamepad</div>
+            <div class="text-xs text-purple-400 font-bold tracking-widest uppercase">P1 Wireless Joystick</div>
         </div>
 
         <!-- Touch Controls Interface -->
         <div id="ctrl-gamepad-interface" class="flex-1 flex flex-col justify-around my-4 opacity-40 pointer-events-none transition-opacity duration-300">
-            <!-- Action Buttons / D-Pad Area -->
             <div class="grid grid-cols-2 gap-4 w-full h-full my-auto items-center">
                 
-                <!-- Left Side: Directional Buttons -->
-                <div class="flex flex-col items-center justify-center">
-                    <div class="text-xs text-gray-500 mb-3 font-semibold uppercase tracking-wider">Direction</div>
-                    <div class="relative w-44 h-44 grid grid-cols-3 grid-rows-3 gap-1 p-2 bg-gray-900/90 rounded-full border border-gray-800">
-                        <div></div>
-                        <button id="btn-up" class="btn-gamepad rounded-t-xl text-white flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-caret-up"></i>
-                        </button>
-                        <div></div>
-
-                        <button id="btn-left" class="btn-gamepad rounded-l-xl text-white flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-caret-left"></i>
-                        </button>
-                        <div class="bg-gray-800/50 rounded-md"></div>
-                        <button id="btn-right" class="btn-gamepad rounded-r-xl text-white flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-caret-right"></i>
-                        </button>
-
-                        <div></div>
-                        <button id="btn-down" class="btn-gamepad rounded-b-xl text-white flex items-center justify-center text-xl">
-                            <i class="fa-solid fa-caret-down"></i>
-                        </button>
-                        <div></div>
+                <!-- Left Side: Analog Virtual Joystick -->
+                <div id="joystick-container" class="flex flex-col items-center justify-center">
+                    <div id="joystick-axis-hint" class="text-xs text-purple-400 mb-3 font-semibold uppercase tracking-wider flex items-center">
+                        <i class="fa-solid fa-arrows-up-down-left-right mr-1"></i> ANALOG JOYSTICK
+                    </div>
+                    <!-- Joystick Outer Base Ring -->
+                    <div id="joystick-base" class="relative w-44 h-44 rounded-full bg-slate-900/90 border-2 border-purple-500/40 shadow-2xl flex items-center justify-center touch-none">
+                        <!-- Crosshair visual details -->
+                        <div class="absolute inset-0 rounded-full border border-purple-500/10 pointer-events-none"></div>
+                        <!-- Movable Stick Knob -->
+                        <div id="joystick-knob" class="w-16 h-16 rounded-full bg-gradient-to-tr from-purple-700 to-indigo-500 border-2 border-purple-300 shadow-xl flex items-center justify-center transition-transform duration-75">
+                            <div class="w-6 h-6 rounded-full bg-white/20"></div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Right Side: Action Buttons (A & B) -->
+                <!-- Right Side: Dynamic Action Buttons Area -->
                 <div class="flex flex-col items-center justify-center">
-                    <div class="text-xs text-gray-500 mb-3 font-semibold uppercase tracking-wider">Action</div>
-                    <div class="relative w-44 h-44 flex items-center justify-center">
-                        <button id="btn-a" class="btn-action bg-indigo-600 text-white absolute bottom-2 right-2 border border-indigo-400">A</button>
-                        <button id="btn-b" class="btn-action bg-rose-600 text-white absolute top-2 left-2 border border-rose-400">B</button>
+                    <div class="text-xs text-gray-500 mb-3 font-semibold uppercase tracking-wider">Actions</div>
+                    <div id="ctrl-action-area" class="relative w-44 h-44 flex items-center justify-center">
+                        <!-- Dynamically populated per game by js/controller.js -->
                     </div>
                 </div>
 
