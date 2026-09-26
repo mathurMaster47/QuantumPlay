@@ -55,30 +55,7 @@ window.QuantumController = (function () {
         if (actionArea) {
             actionArea.innerHTML = '';
 
-            if (config.showStartButton) {
-                console.log('Showing START button');
-                // Show special START button for game launch
-                const startButton = document.createElement('button');
-                startButton.className = 'btn-action bg-emerald-600 border-emerald-400 text-white font-extrabold shadow-2xl border-2 text-lg active:scale-90 transition-all';
-                startButton.textContent = 'START';
-                startButton.id = 'start-btn';
-                
-                // Add simple click handler for START button
-                startButton.onclick = () => {
-                    console.log('START button pressed');
-                    // Send start signal through WebRTC
-                    window.QuantumWebRTC.controllerInput.btnStart = true;
-                    window.QuantumWebRTC.sendInputState();
-                    setTimeout(() => {
-                        window.QuantumWebRTC.controllerInput.btnStart = false;
-                        window.QuantumWebRTC.sendInputState();
-                    }, 100);
-                    if (navigator.vibrate) navigator.vibrate(50);
-                };
-                
-                actionArea.appendChild(startButton);
-                console.log('START button added to controller');
-            } else if (Array.isArray(config.buttons) && config.buttons.length > 0) {
+            if (Array.isArray(config.buttons) && config.buttons.length > 0) {
                 console.log('Showing game buttons:', config.buttons);
                 config.buttons.forEach(btn => {
                     const buttonEl = document.createElement('button');
