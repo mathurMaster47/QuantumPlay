@@ -1,13 +1,13 @@
 /**
  * Sukuna - Magical Physics Puzzle Game Module for QuantumPlay
+ * Widescreen (1200x675) Laptop Display Edition
  * Powered by Matter.js Physics Engine
  */
 
 (function () {
-    let engine, world, render, runner;
+    let engine, world;
     let animationFrameId = null;
 
-    // --- GAME CONFIGURATION CONSTANTS ---
     const CELESTIAL_TIERS = [
         { tier: 0, name: "Star Gem", radius: 18, color: "#ffe066", emoji: "⭐", score: 2 },
         { tier: 1, name: "Moon Shard", radius: 25, color: "#80e5ff", emoji: "🌙", score: 4 },
@@ -17,10 +17,15 @@
         { tier: 5, name: "Comet Ring", radius: 57, color: "#33ffff", emoji: "🪐", score: 64 },
     ];
 
-    const WORLD_WIDTH = 450;
-    const WORLD_HEIGHT = 700;
-    const DROP_Y = 60;
-    const LIMIT_Y = 120;
+    const CANVAS_WIDTH = 1200;
+    const CANVAS_HEIGHT = 675;
+
+    // Centered Physics Container Box
+    const CONTAINER_LEFT = 380;
+    const CONTAINER_RIGHT = 820;
+    const CONTAINER_WIDTH = CONTAINER_RIGHT - CONTAINER_LEFT;
+    const DROP_Y = 55;
+    const LIMIT_Y = 115;
     const GAME_OVER_BUFFER_MS = 1500;
     const DROP_COOLDOWN_MS = 500;
 
@@ -31,7 +36,7 @@
     let previewBody = null;
     let canDrop = true;
     let isGameOver = false;
-    let pointerX = WORLD_WIDTH / 2;
+    let pointerX = CANVAS_WIDTH / 2;
     let lastBtnAState = false;
 
     const bodiesAboveLimit = new Map();
@@ -39,15 +44,12 @@
 
     // Web Audio Synthesizer
     let audioCtx = null;
-
     function initAudioContext() {
         if (!audioCtx) {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (AudioContextClass) audioCtx = new AudioContextClass();
+            const AudioClass = window.AudioContext || window.webkitAudioContext;
+            if (AudioClass) audioCtx = new AudioClass();
         }
-        if (audioCtx && audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
     }
 
     function playSound(type) {
@@ -86,7 +88,7 @@
     }
 
     function createMergeParticles(x, y, color) {
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < 18; i++) {
             const angle = Math.random() * Math.PI * 2;
             const speed = Math.random() * 5 + 2;
             mergeParticles.push({
@@ -133,33 +135,30 @@
             return;
         }
 
-        const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
+        const { Engine, Bodies, Composite, Events, Body } = Matter;
 
         score = 0;
         isGameOver = false;
         canDrop = true;
         mergeParticles = [];
         bodiesAboveLimit.clear();
-        pointerX = WORLD_WIDTH / 2;
+        pointerX = CANVAS_WIDTH / 2;
         lastBtnAState = false;
 
-        // Create Matter.js Engine & World
         engine = Engine.create({ gravity: { y: 0.98, scale: 0.001 } });
         world = engine.world;
 
-        // Build static boundaries
-        const wallOptions = { isStatic: true, friction: 0.2, render: { fillStyle: '#25072d' } };
-        const leftWall = Bodies.rectangle(-10, WORLD_HEIGHT / 2, 20, WORLD_HEIGHT, wallOptions);
-        const rightWall = Bodies.rectangle(WORLD_WIDTH + 10, WORLD_HEIGHT / 2, 20, WORLD_HEIGHT, wallOptions);
-        const floor = Bodies.rectangle(WORLD_WIDTH / 2, WORLD_HEIGHT + 15, WORLD_WIDTH, 40, wallOptions);
+        // Static Boundaries around centered container
+        const wallOptions = { isStatic: true, friction: 0.2, render: { visible: false } };
+        const leftWall = Bodies.rectangle(CONTAINER_LEFT - 10, CANVAS_HEIGHT / 2, 20, CANVAS_HEIGHT, wallOptions);
+        const rightWall = Bodies.rectangle(CONTAINER_RIGHT + 10, CANVAS_HEIGHT / 2, 20, CANVAS_HEIGHT, wallOptions);
+        const floor = Bodies.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT - 25, CONTAINER_WIDTH + 20, 30, wallOptions);
         Composite.add(world, [leftWall, rightWall, floor]);
 
-        // Start items
         currentItemTier = Math.floor(Math.random() * 4);
         nextItemTier = Math.floor(Math.random() * 4);
         spawnPreviewFruit();
 
-        // Register Collision Events
         Events.on(engine, 'collisionStart', (event) => {
             const pairs = event.pairs;
             for (let i = 0; i < pairs.length; i++) {
@@ -186,6 +185,7 @@
                             spawnFruit(midX, midY, nextTier);
                             playSound('merge');
                             score += CELESTIAL_TIERS[tierA].score;
+                            if (score > highScore) highScore = score;
                             createMergeParticles(midX, midY, CELESTIAL_TIERS[nextTier].color);
                         }
                     }, 0);
@@ -193,7 +193,6 @@
             }
         });
 
-        // Register Physics Update Check
         Events.on(engine, 'afterUpdate', () => {
             if (isGameOver) return;
             const bodies = Composite.allBodies(world);
@@ -215,10 +214,10 @@
             });
         });
 
-        // Mouse/Touch Direct Canvas Controls
+        // Mouse/Touch Direct Pointer Controls
         const handleCanvasPointer = (clientX) => {
             const rect = canvas.getBoundingClientRect();
-            const scaledX = (clientX - rect.left) * (WORLD_WIDTH / rect.width);
+            const scaledX = (clientX - rect.left) * (CANVAS_WIDTH / rect.width);
             updatePointerX(scaledX);
         };
 
@@ -227,18 +226,12 @@
             handleCanvasPointer(e.clientX);
             dropCurrentFruit();
         };
-        canvas.ontouchstart = (e) => {
-            if (e.touches.length > 0) {
-                handleCanvasPointer(e.touches[0].clientX);
-            }
-        };
-        canvas.ontouchend = (e) => dropCurrentFruit();
 
         function spawnPreviewFruit() {
             if (isGameOver) return;
             const item = CELESTIAL_TIERS[currentItemTier];
             const r = item.radius;
-            pointerX = Math.max(r + 10, Math.min(WORLD_WIDTH - r - 10, pointerX));
+            pointerX = Math.max(CONTAINER_LEFT + r + 5, Math.min(CONTAINER_RIGHT - r - 5, pointerX));
 
             previewBody = Bodies.circle(pointerX, DROP_Y, r, {
                 isStatic: true,
@@ -263,7 +256,7 @@
         function updatePointerX(newX) {
             if (isGameOver || currentItemTier === null) return;
             const r = CELESTIAL_TIERS[currentItemTier].radius;
-            pointerX = Math.max(r + 10, Math.min(WORLD_WIDTH - r - 10, newX));
+            pointerX = Math.max(CONTAINER_LEFT + r + 5, Math.min(CONTAINER_RIGHT - r - 5, newX));
             if (previewBody) {
                 Body.setPosition(previewBody, { x: pointerX, y: DROP_Y });
             }
@@ -290,25 +283,21 @@
             }, DROP_COOLDOWN_MS);
         }
 
-        // --- MAIN RENDER & INPUT LOOP ---
+        // --- MAIN RENDER LOOP ---
         function loop() {
-            // Update physics step
             Engine.update(engine, 1000 / 60);
-
-            // Read Phone Gamepad Input
             const input = getInput();
 
-            // Analog Joystick X Movement (-1.0 to 1.0)
+            // Analog Joystick X Control
             if (input && Math.abs(input.x) > 0.05) {
-                const moveSpeed = 6;
-                updatePointerX(pointerX + input.x * moveSpeed);
-            } else if (input.left) {
-                updatePointerX(pointerX - 5);
-            } else if (input.right) {
-                updatePointerX(pointerX + 5);
+                updatePointerX(pointerX + input.x * 7);
+            } else if (input && input.left) {
+                updatePointerX(pointerX - 6);
+            } else if (input && input.right) {
+                updatePointerX(pointerX + 6);
             }
 
-            // Action A Button (Drop Fruit on Press)
+            // Action Button DROP
             if (input && input.btnA && !lastBtnAState) {
                 dropCurrentFruit();
             }
@@ -316,32 +305,39 @@
 
             // --- CANVAS DRAWING ---
             ctx.save();
-            ctx.fillStyle = '#2d0b36';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#120317';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-            // Draw Drop Limit Line
+            // Container Background Surface
+            ctx.fillStyle = 'rgba(45, 11, 54, 0.7)';
+            ctx.fillRect(CONTAINER_LEFT, 0, CONTAINER_WIDTH, CANVAS_HEIGHT - 40);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(CONTAINER_LEFT, 0, CONTAINER_WIDTH, CANVAS_HEIGHT - 40);
+
+            // Upper Limit Line
             ctx.beginPath();
-            ctx.moveTo(0, LIMIT_Y);
-            ctx.lineTo(WORLD_WIDTH, LIMIT_Y);
+            ctx.moveTo(CONTAINER_LEFT, LIMIT_Y);
+            ctx.lineTo(CONTAINER_RIGHT, LIMIT_Y);
             ctx.strokeStyle = isGameOver ? 'rgba(255, 51, 170, 0.8)' : 'rgba(218, 112, 214, 0.3)';
             ctx.lineWidth = 2;
             ctx.setLineDash([6, 6]);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Draw Aim Guide Line
+            // Aim Guide Line
             if (canDrop && !isGameOver) {
                 ctx.beginPath();
                 ctx.moveTo(pointerX, DROP_Y);
-                ctx.lineTo(pointerX, WORLD_HEIGHT);
-                ctx.strokeStyle = 'rgba(255, 51, 170, 0.25)';
-                ctx.lineWidth = 1.5;
+                ctx.lineTo(pointerX, CANVAS_HEIGHT - 40);
+                ctx.strokeStyle = 'rgba(255, 51, 170, 0.3)';
+                ctx.lineWidth = 2;
                 ctx.setLineDash([4, 4]);
                 ctx.stroke();
                 ctx.setLineDash([]);
             }
 
-            // Render All Matter.js Bodies
+            // Draw Matter.js Celestial Bodies
             const bodies = Composite.allBodies(world);
             bodies.forEach(body => {
                 const tier = body.plugin ? body.plugin.tier : undefined;
@@ -349,7 +345,6 @@
                     const item = CELESTIAL_TIERS[tier];
                     const isPreview = body.plugin.isPreview;
 
-                    // Glow aura
                     ctx.save();
                     ctx.beginPath();
                     ctx.arc(body.position.x, body.position.y, item.radius - 2, 0, Math.PI * 2);
@@ -360,7 +355,6 @@
                     ctx.stroke();
                     ctx.restore();
 
-                    // Filled circle with emoji
                     ctx.save();
                     ctx.beginPath();
                     ctx.arc(body.position.x, body.position.y, item.radius, 0, Math.PI * 2);
@@ -370,7 +364,6 @@
                     ctx.lineWidth = 2;
                     ctx.stroke();
 
-                    // Emoji text
                     ctx.font = `bold ${item.radius * 0.95}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
@@ -380,44 +373,93 @@
                 }
             });
 
-            // Particles
             updateAndDrawParticles(ctx);
 
-            // Draw Score & UI Headers
+            // --- LEFT PANEL: LOGO & STATS ---
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 22px Outfit, sans-serif';
-            ctx.fillText(`SCORE: ${score}`, 20, 38);
+            ctx.font = '800 32px Outfit, sans-serif';
+            ctx.fillText('SUKUNA PUZZLE', 40, 60);
 
-            // Draw Next Item Preview Box
+            // Stat Card 1: Score
+            ctx.fillStyle = 'rgba(255, 51, 170, 0.1)';
+            ctx.fillRect(40, 90, 140, 70);
+            ctx.strokeStyle = 'rgba(255, 51, 170, 0.3)';
+            ctx.strokeRect(40, 90, 140, 70);
+            ctx.fillStyle = '#d8c3df';
+            ctx.font = '600 12px Outfit, sans-serif';
+            ctx.fillText('SCORE', 55, 112);
+            ctx.fillStyle = '#ff33aa';
+            ctx.font = '800 28px Outfit, sans-serif';
+            ctx.fillText(`${score}`, 55, 148);
+
+            // Stat Card 2: Best
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
+            ctx.fillRect(195, 90, 140, 70);
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+            ctx.strokeRect(195, 90, 140, 70);
+            ctx.fillStyle = '#d8c3df';
+            ctx.font = '600 12px Outfit, sans-serif';
+            ctx.fillText('BEST', 210, 112);
+            ctx.fillStyle = '#00f0ff';
+            ctx.font = '800 28px Outfit, sans-serif';
+            ctx.fillText(`${highScore}`, 210, 148);
+
+            // Next Item Preview Card
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(40, 180, 295, 100);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeRect(40, 180, 295, 100);
+            ctx.fillStyle = '#d8c3df';
+            ctx.font = '600 12px Outfit, sans-serif';
+            ctx.fillText('NEXT CELESTIAL ITEM', 55, 205);
+
             if (nextItemTier !== null && CELESTIAL_TIERS[nextItemTier]) {
                 const nextItem = CELESTIAL_TIERS[nextItemTier];
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                ctx.fillRect(WORLD_WIDTH - 120, 10, 100, 42);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-                ctx.strokeRect(WORLD_WIDTH - 120, 10, 100, 42);
-
-                ctx.fillStyle = '#d8c3df';
-                ctx.font = '10px sans-serif';
-                ctx.fillText('NEXT', WORLD_WIDTH - 110, 24);
-
-                ctx.font = '18px sans-serif';
-                ctx.fillText(nextItem.emoji, WORLD_WIDTH - 50, 32);
-            }
-
-            // Game Over overlay
-            if (isGameOver) {
-                ctx.fillStyle = 'rgba(18, 3, 23, 0.85)';
-                ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-                ctx.fillStyle = '#ff33aa';
-                ctx.font = 'bold 36px Outfit, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('GAME OVER', WORLD_WIDTH / 2, WORLD_HEIGHT / 2 - 20);
+                ctx.font = '36px sans-serif';
+                ctx.fillText(nextItem.emoji, 60, 255);
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(`Final Score: ${score}`, WORLD_WIDTH / 2, WORLD_HEIGHT / 2 + 25);
+                ctx.font = '800 18px Outfit, sans-serif';
+                ctx.fillText(nextItem.name, 120, 250);
             }
-            ctx.restore();
 
+            // --- RIGHT PANEL: EVOLUTION CHAIN ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(860, 40, 300, 595);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeRect(860, 40, 300, 595);
+
+            ctx.fillStyle = '#ff33aa';
+            ctx.font = '800 18px Outfit, sans-serif';
+            ctx.fillText('EVOLUTION HIERARCHY', 880, 75);
+
+            CELESTIAL_TIERS.forEach((item, idx) => {
+                const yPos = 110 + idx * 85;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.fillRect(875, yPos, 270, 70);
+                ctx.font = '28px sans-serif';
+                ctx.fillText(item.emoji, 890, yPos + 46);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '600 16px Outfit, sans-serif';
+                ctx.fillText(item.name, 940, yPos + 35);
+                ctx.fillStyle = '#d8c3df';
+                ctx.font = '12px Outfit, sans-serif';
+                ctx.fillText(`+${item.score} Points`, 940, yPos + 54);
+            });
+
+            // Game Over Overlay
+            if (isGameOver) {
+                ctx.fillStyle = 'rgba(18, 3, 23, 0.88)';
+                ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                ctx.fillStyle = '#ff33aa';
+                ctx.font = '800 48px Outfit, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('GAME OVER', CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 20);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '24px sans-serif';
+                ctx.fillText(`Final Score: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 30);
+            }
+
+            ctx.restore();
             animationFrameId = requestAnimationFrame(loop);
         }
 
@@ -429,9 +471,7 @@
             cancelAnimationFrame(animationFrameId);
             animationFrameId = null;
         }
-        if (engine) {
-            Matter.Engine.clear(engine);
-        }
+        if (engine) Matter.Engine.clear(engine);
     }
 
     window.QuantumGames = window.QuantumGames || {};

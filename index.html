@@ -47,19 +47,19 @@
             <div class="rounded-3xl overflow-hidden relative glass-card p-8 md:p-12 flex flex-col md:flex-row items-center justify-between border border-gray-800/80">
                 <div class="absolute -right-20 -top-20 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
                 <div class="z-10 max-w-xl">
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 uppercase tracking-widest">Next-Gen Wireless Gaming</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20 uppercase tracking-widest">Widescreen Laptop Gaming</span>
                     <h1 class="text-4xl md:text-5xl font-extrabold text-white mt-4 tracking-tight leading-tight">
                         Your Phone is Your Gamepad.
                     </h1>
                     <p class="text-gray-400 mt-3 text-lg">
-                        Select any game below, scan the pair QR code with your smartphone, and play immediately with custom dynamic joysticks.
+                        Select any game below, scan the pair QR code with your smartphone, and play in full 16:9 widescreen display.
                     </p>
                 </div>
                 <div class="z-10 mt-6 md:mt-0 flex items-center space-x-3 text-gray-400 text-sm bg-gray-900/80 px-5 py-3 rounded-2xl border border-gray-800">
-                    <i class="fa-solid fa-mobile-screen-button text-2xl text-purple-400"></i>
+                    <i class="fa-solid fa-desktop text-2xl text-purple-400"></i>
                     <div>
-                        <div class="text-white font-semibold">Dynamic Controller Scheme</div>
-                        <div class="text-xs text-gray-500">Directional Joystick & Dynamic Action Buttons</div>
+                        <div class="text-white font-semibold">16:9 Laptop Aspect Ratio</div>
+                        <div class="text-xs text-gray-500">HD Widescreen Canvas Display</div>
                     </div>
                 </div>
             </div>
@@ -96,25 +96,27 @@
             </div>
         </div>
 
-        <!-- Canvas Game Container -->
-        <div class="flex-1 relative flex items-center justify-center p-4 bg-black overflow-hidden">
-            <canvas id="gameCanvas" class="rounded-2xl shadow-2xl border border-purple-500/30 bg-slate-900 max-h-[85vh] aspect-[450/700]"></canvas>
+        <!-- Widescreen Canvas Game Container (Matching Laptop 16:9 Aspect Ratio) -->
+        <div class="flex-1 relative flex items-center justify-center p-4 bg-slate-950 overflow-hidden">
+            <div id="canvas-wrapper" class="relative max-w-6xl w-full aspect-[16/9] max-h-[85vh] flex items-center justify-center rounded-2xl shadow-2xl border border-purple-500/30 overflow-hidden bg-slate-900">
+                <canvas id="gameCanvas" class="w-full h-full object-contain block bg-slate-900"></canvas>
 
-            <!-- QR Pairing Overlay (Appears until phone connects) -->
-            <div id="qr-modal" class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center z-10">
-                <div class="glass-card p-8 rounded-3xl max-w-md w-full border border-purple-500/30 shadow-2xl flex flex-col items-center">
-                    <div class="w-12 h-12 rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xl mb-4">
-                        <i class="fa-solid fa-qrcode"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-white">Scan Controller QR Code</h3>
-                    <p class="text-gray-400 text-sm mt-1 mb-6">Open your phone's camera to connect your wireless joystick controller.</p>
+                <!-- QR Pairing Overlay (Appears until phone connects) -->
+                <div id="qr-modal" class="absolute inset-0 bg-slate-950/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center z-10">
+                    <div class="glass-card p-8 rounded-3xl max-w-md w-full border border-purple-500/30 shadow-2xl flex flex-col items-center">
+                        <div class="w-12 h-12 rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center text-xl mb-4">
+                            <i class="fa-solid fa-qrcode"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">Scan Controller QR Code</h3>
+                        <p class="text-gray-400 text-sm mt-1 mb-6">Open your phone's camera to connect your wireless joystick controller.</p>
 
-                    <div class="p-4 bg-white rounded-2xl shadow-inner mb-6">
-                        <div id="qrcode"></div>
-                    </div>
+                        <div class="p-4 bg-white rounded-2xl shadow-inner mb-6">
+                            <div id="qrcode"></div>
+                        </div>
 
-                    <div class="text-xs text-gray-500 bg-gray-900/80 px-4 py-2 rounded-xl border border-gray-800 w-full break-all">
-                        Room ID: <span id="display-room-id" class="text-purple-400 font-mono">Generating...</span>
+                        <div class="text-xs text-gray-500 bg-gray-900/80 px-4 py-2 rounded-xl border border-gray-800 w-full break-all">
+                            Room ID: <span id="display-room-id" class="text-purple-400 font-mono">Generating...</span>
+                        </div>
                     </div>
                 </div>
             </div>

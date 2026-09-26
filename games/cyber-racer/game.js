@@ -1,21 +1,22 @@
 /**
  * Cyber Turbo Racer Game Module for QuantumPlay
+ * Widescreen (1200x675) Laptop Display Edition
  */
 
 (function () {
     let animationFrameId = null;
 
     function start(canvas, ctx, getInput) {
-        const ROAD_LEFT = 60;
-        const ROAD_RIGHT = canvas.width - 60;
+        const ROAD_LEFT = 350;
+        const ROAD_RIGHT = 850;
         const ROAD_WIDTH = ROAD_RIGHT - ROAD_LEFT;
 
         let player = {
             x: canvas.width / 2,
-            y: canvas.height - 100,
-            w: 42,
-            h: 70,
-            speed: 7
+            y: canvas.height - 110,
+            w: 48,
+            h: 76,
+            speed: 8
         };
 
         let obstacles = [];
@@ -65,14 +66,14 @@
         }
 
         function createExhaustParticles(x, y, isNitroActive) {
-            const count = isNitroActive ? 5 : 2;
+            const count = isNitroActive ? 6 : 2;
             for (let i = 0; i < count; i++) {
                 particles.push({
-                    x: x + (Math.random() - 0.5) * 16,
+                    x: x + (Math.random() - 0.5) * 18,
                     y: y,
                     vx: (Math.random() - 0.5) * 2,
-                    vy: Math.random() * 4 + 4,
-                    radius: isNitroActive ? Math.random() * 6 + 3 : Math.random() * 3 + 1,
+                    vy: Math.random() * 5 + 5,
+                    radius: isNitroActive ? Math.random() * 7 + 4 : Math.random() * 3 + 1,
                     color: isNitroActive ? (Math.random() > 0.5 ? '#f43f5e' : '#fbbf24') : '#38bdf8',
                     alpha: 1.0,
                     decay: 0.05
@@ -81,15 +82,15 @@
         }
 
         function spawnObstacle() {
-            const lanes = [ROAD_LEFT + 50, ROAD_LEFT + ROAD_WIDTH / 2, ROAD_RIGHT - 50];
+            const lanes = [ROAD_LEFT + 70, ROAD_LEFT + ROAD_WIDTH / 2, ROAD_RIGHT - 70];
             const laneX = lanes[Math.floor(Math.random() * lanes.length)];
             const colors = ['#06b6d4', '#eab308', '#ec4899', '#10b981'];
 
             obstacles.push({
                 x: laneX,
                 y: -90,
-                w: 40,
-                h: 68,
+                w: 44,
+                h: 72,
                 speed: Math.random() * 3 + 4,
                 color: colors[Math.floor(Math.random() * colors.length)]
             });
@@ -104,7 +105,6 @@
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             if (!isGameOver) {
-                // Read Nitro Action Button State
                 isNitro = input && input.btnA;
                 speedMultiplier = isNitro ? 2.2 : 1.0;
 
@@ -125,7 +125,7 @@
                 player.x = Math.max(minX, Math.min(maxX, player.x));
 
                 // Scroll Road Markings
-                roadOffset = (roadOffset + 8 * speedMultiplier) % 40;
+                roadOffset = (roadOffset + 9 * speedMultiplier) % 40;
 
                 // Spawn Traffic Cars
                 const spawnInterval = isNitro ? 22 : 40;
@@ -143,9 +143,9 @@
 
             // Outer Neon Road Barriers
             ctx.strokeStyle = '#f43f5e';
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 5;
             ctx.shadowColor = '#f43f5e';
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = 14;
             ctx.beginPath();
             ctx.moveTo(ROAD_LEFT, 0);
             ctx.lineTo(ROAD_LEFT, canvas.height);
@@ -227,7 +227,6 @@
                     }
                 }
 
-                // Remove offscreen
                 if (obs.y > canvas.height + 100) {
                     obstacles.splice(i, 1);
                 }
@@ -238,7 +237,7 @@
                 ctx.save();
                 ctx.fillStyle = '#f43f5e';
                 ctx.shadowColor = isNitro ? '#fbbf24' : '#f43f5e';
-                ctx.shadowBlur = isNitro ? 20 : 12;
+                ctx.shadowBlur = isNitro ? 22 : 12;
 
                 // Main body
                 ctx.beginPath();
@@ -258,27 +257,57 @@
                 ctx.restore();
             }
 
-            // --- HUD & OVERLAY ---
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 22px Outfit, sans-serif';
-            ctx.fillText(`SCORE: ${score}`, 20, 40);
+            // --- LEFT SIDE PANEL: DASHBOARD GAUGES ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(40, 40, 270, 595);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeRect(40, 40, 270, 595);
 
-            if (isNitro && !isGameOver) {
-                ctx.fillStyle = '#fbbf24';
-                ctx.font = 'bold 16px Outfit, sans-serif';
-                ctx.fillText(`🔥 NITRO ACTIVE!`, 20, 68);
-            }
+            ctx.fillStyle = '#f43f5e';
+            ctx.font = '800 24px Outfit, sans-serif';
+            ctx.fillText('CYBER RACER', 60, 80);
+
+            // Speedometer gauge
+            const speedKmh = Math.round(180 * speedMultiplier);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '800 48px Outfit, sans-serif';
+            ctx.fillText(`${speedKmh}`, 60, 150);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('KM / H', 160, 150);
+
+            // Nitro Gauge
+            ctx.fillStyle = '#d8c3df';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('NITRO BOOST', 60, 210);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(60, 225, 230, 20);
+            ctx.fillStyle = isNitro ? '#fbbf24' : '#f43f5e';
+            ctx.fillRect(60, 225, isNitro ? 230 : 150, 20);
+
+            // --- RIGHT SIDE PANEL: SCORE & MULTIPLIERS ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(890, 40, 270, 595);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeRect(890, 40, 270, 595);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('CURRENT SCORE', 910, 80);
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '800 40px Outfit, sans-serif';
+            ctx.fillText(`${score}`, 910, 130);
 
             if (isGameOver) {
-                ctx.fillStyle = 'rgba(9, 5, 20, 0.85)';
+                ctx.fillStyle = 'rgba(9, 5, 20, 0.88)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = '#f43f5e';
-                ctx.font = 'bold 36px Outfit, sans-serif';
+                ctx.font = '800 48px Outfit, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('CRASHED!', canvas.width / 2, canvas.height / 2 - 20);
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 25);
+                ctx.font = '24px sans-serif';
+                ctx.fillText(`Final Distance Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
             }
 
             animationFrameId = requestAnimationFrame(loop);

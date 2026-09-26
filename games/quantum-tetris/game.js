@@ -1,5 +1,6 @@
 /**
  * Neon Cyber Tetris Game Module for QuantumPlay
+ * Widescreen (1200x675) Laptop Display Edition
  */
 
 (function () {
@@ -8,7 +9,7 @@
     function start(canvas, ctx, getInput) {
         const COLS = 10;
         const ROWS = 20;
-        const BLOCK_SIZE = 30;
+        const BLOCK_SIZE = 28;
         const BOARD_WIDTH = COLS * BLOCK_SIZE;
         const BOARD_HEIGHT = ROWS * BLOCK_SIZE;
         const OFFSET_X = (canvas.width - BOARD_WIDTH) / 2;
@@ -146,7 +147,6 @@
             const originalShape = piece.shape;
             piece.shape = rotate(piece.shape);
             if (collide(grid, piece)) {
-                // Wall kick check
                 piece.x += 1;
                 if (collide(grid, piece)) {
                     piece.x -= 2;
@@ -179,7 +179,7 @@
                     grid.splice(r, 1);
                     grid.unshift(Array(COLS).fill(0));
                     cleared++;
-                    r++; // Recheck same row index
+                    r++;
                 }
             }
             if (cleared > 0) {
@@ -216,10 +216,8 @@
 
             if (!isGameOver) {
                 dropCounter += deltaTime;
-
                 const input = getInput();
 
-                // Horizontal Movement Cooldown
                 moveCooldown -= deltaTime;
                 if (moveCooldown <= 0 && input) {
                     if (input.x < -0.3 || input.left) {
@@ -233,24 +231,20 @@
                     }
                 }
 
-                // Soft Drop (Joystick Down)
                 if (input && (input.y > 0.4 || input.down)) {
                     dropCounter += deltaTime * 8;
                 }
 
-                // Action A Button (Rotate)
                 if (input && input.btnA && !lastBtnAState) {
                     rotatePiece();
                 }
                 lastBtnAState = input ? input.btnA : false;
 
-                // Action B Button (Hard Drop)
                 if (input && input.btnB && !lastBtnBState) {
                     hardDrop();
                 }
                 lastBtnBState = input ? input.btnB : false;
 
-                // Auto Drop
                 if (dropCounter > dropInterval) {
                     piece.y++;
                     if (collide(grid, piece)) {
@@ -262,14 +256,14 @@
             }
 
             // --- CANVAS DRAWING ---
-            ctx.fillStyle = '#0b0f19';
+            ctx.fillStyle = '#0f172a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Draw Board Container
-            ctx.fillStyle = '#111827';
+            ctx.fillStyle = '#1e293b';
             ctx.fillRect(OFFSET_X, OFFSET_Y, BOARD_WIDTH, BOARD_HEIGHT);
-            ctx.strokeStyle = '#374151';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 3;
             ctx.strokeRect(OFFSET_X, OFFSET_Y, BOARD_WIDTH, BOARD_HEIGHT);
 
             // Draw Static Grid Blocks
@@ -325,27 +319,88 @@
                 ctx.restore();
             }
 
-            // Draw HUD & Scoreboard
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 22px Outfit, sans-serif';
-            ctx.fillText(`SCORE: ${score}`, 20, 40);
+            // --- LEFT PANEL: SCOREBOARDS ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(60, OFFSET_Y, 320, BOARD_HEIGHT);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeRect(60, OFFSET_Y, 320, BOARD_HEIGHT);
 
             ctx.fillStyle = '#00f0ff';
-            ctx.font = '16px Outfit, sans-serif';
-            ctx.fillText(`LEVEL: ${level}`, 20, 68);
-            ctx.fillText(`LINES: ${lines}`, 20, 92);
+            ctx.font = '800 28px Outfit, sans-serif';
+            ctx.fillText('CYBER TETRIS', 90, OFFSET_Y + 45);
 
-            // Draw Game Over Overlay
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('SCORE', 90, OFFSET_Y + 110);
+            ctx.fillStyle = '#00f0ff';
+            ctx.font = '800 42px Outfit, sans-serif';
+            ctx.fillText(`${score}`, 90, OFFSET_Y + 160);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('LEVEL', 90, OFFSET_Y + 230);
+            ctx.fillStyle = '#a855f7';
+            ctx.font = '800 36px Outfit, sans-serif';
+            ctx.fillText(`${level}`, 90, OFFSET_Y + 275);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('LINES CLEARED', 90, OFFSET_Y + 340);
+            ctx.fillStyle = '#10b981';
+            ctx.font = '800 36px Outfit, sans-serif';
+            ctx.fillText(`${lines}`, 90, OFFSET_Y + 385);
+
+            // --- RIGHT PANEL: NEXT PIECE PREVIEW ---
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.fillRect(820, OFFSET_Y, 320, BOARD_HEIGHT);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeRect(820, OFFSET_Y, 320, BOARD_HEIGHT);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('NEXT PIECE', 850, OFFSET_Y + 45);
+
+            if (nextPiece) {
+                ctx.save();
+                ctx.fillStyle = nextPiece.color;
+                ctx.shadowColor = nextPiece.color;
+                ctx.shadowBlur = 10;
+                for (let r = 0; r < nextPiece.shape.length; r++) {
+                    for (let c = 0; c < nextPiece.shape[r].length; c++) {
+                        if (nextPiece.shape[r][c] !== 0) {
+                            ctx.fillRect(
+                                890 + c * 24,
+                                OFFSET_Y + 70 + r * 24,
+                                22,
+                                22
+                            );
+                        }
+                    }
+                }
+                ctx.restore();
+            }
+
+            // Controls Hint
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 14px Outfit, sans-serif';
+            ctx.fillText('CONTROLS:', 850, OFFSET_Y + 240);
+            ctx.font = '13px sans-serif';
+            ctx.fillText('• Joystick Left / Right: Move', 850, OFFSET_Y + 270);
+            ctx.fillText('• Joystick Down: Soft Drop', 850, OFFSET_Y + 295);
+            ctx.fillText('• Button [ROTATE]: Flip Block', 850, OFFSET_Y + 320);
+            ctx.fillText('• Button [DROP]: Hard Drop', 850, OFFSET_Y + 345);
+
+            // Game Over Overlay
             if (isGameOver) {
-                ctx.fillStyle = 'rgba(11, 15, 25, 0.85)';
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = '#a855f7';
-                ctx.font = 'bold 36px Outfit, sans-serif';
+                ctx.font = '800 48px Outfit, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '20px sans-serif';
-                ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 25);
+                ctx.font = '24px sans-serif';
+                ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 30);
             }
 
             animationFrameId = requestAnimationFrame(loop);

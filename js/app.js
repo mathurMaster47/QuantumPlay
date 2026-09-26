@@ -150,9 +150,9 @@ window.QuantumApp = (function () {
         };
         window.QuantumWebRTC.sendControlConfig(controlConfig);
 
-        // Set Canvas Dimensions
-        canvas.width = 450;
-        canvas.height = 700;
+        // Set Widescreen 16:9 Laptop Canvas Dimensions
+        canvas.width = 1200;
+        canvas.height = 675;
 
         // Launch game instance
         try {
